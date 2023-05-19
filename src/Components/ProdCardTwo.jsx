@@ -1,6 +1,6 @@
 import { Add } from '@mui/icons-material'
 import React from 'react'
-import { useDispatch, useSelector } from 'react-redux'
+import { useDispatch} from 'react-redux'
 import styled from 'styled-components'
 import { ADD } from '../Redux/actions/action'
   
@@ -19,11 +19,6 @@ background-color: rgba(7, 0, 103, 0.15);
 
 `
 
-const Price = styled.div`
-font-size: medium;
-
-
-`
 
 const Box = styled.button`
 background-color: #5e7f03;
@@ -56,7 +51,6 @@ width: 80%;
 
 const ProductCardTwo = ({Prod}) => {
 
-  const getdata = useSelector((state)=> state.cartreducer.carts);
   const dispatch = useDispatch();
 
   const send = (e)=>{

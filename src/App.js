@@ -1,11 +1,8 @@
 import axios from 'axios';
 import React, { useEffect, useState } from 'react'
-import { BrowserRouter, Route, Routes } from 'react-router-dom';
-import MyComponent from './Components/MyComp'
-import ProductList from './Components/ProdListing';
+import { HashRouter, Route, Routes } from 'react-router-dom';
 import ProductListing from './Pages/ProductListing';
 import Cart from './Components/Table';
-import Groups from './Pages/Groups';
 import Groups2 from './Pages/Groups2';
 
 const App = () => {
@@ -40,15 +37,14 @@ const App = () => {
 
 
   return (
-    <BrowserRouter>
+    <HashRouter>
     <Routes>
       <Route path="/" element={<ProductListing products={data}/>} />
       <Route path="/table" element={<Cart/>} />
       <Route path="/Groups" element={<Groups2/>} />
-
-
+      
       </Routes>
-    </BrowserRouter>
+    </HashRouter>
   )
 }
 

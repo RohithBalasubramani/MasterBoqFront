@@ -22,19 +22,3 @@ export const REMOVE = (iteam) => {
     }
 }
 
-// Add Fav
-export const FAV = (id) => {
-    return {
-        type: "ADD_FAV",
-        payload: id
-    }
-}
-
-// remove Fav
-
-export const REMOVEFAV = (iteam) => {
-    return {
-        type: "RMV_FAV",
-        payload: iteam
-    }
-}

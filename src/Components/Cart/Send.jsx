@@ -1,4 +1,4 @@
-import { Alert, Button, Snackbar, TextField } from '@mui/material'
+import { Button, TextField } from '@mui/material'
 import axios from 'axios'
 import React, { useState } from 'react'
 import { useSelector } from 'react-redux'
@@ -31,47 +31,6 @@ const Send = (props) => {
     const [GroupName, setGroupName] = useState();
 
     const getdata = useSelector((state)=> state.cartreducer.carts);
-    // console.log(getdata);
-
-    // const serializedGroupedProducts = Object.entries(getdata).map(([ id, ProductName, ModelNumber,
-    //     Category,
-    //      SubCategory,
-    //      SubCategory2,
-    //      SubCategory3,
-    //      SubCategory4,
-    //      SubCategory5,
-    //      SubCategory6,
-    //      Brand,
-    //      Industry,
-    //      Price,
-    //      GSTPercentage,]) => ({
-
-    //     GroupName:GroupName,
-    //     id:id,
-    //     ProductName: ProductName,
-    //     ModelNumber:ModelNumber,
-    //     Category: Category,
-    //     SubCategory: SubCategory,
-    //     SubCategory2: SubCategory2,
-    //     SubCategory3: SubCategory3,
-    //     SubCategory4: SubCategory4,
-    //     SubCategory5: SubCategory5,
-    //     SubCategory6: SubCategory6,
-    //     Brand: Brand,
-    //     Industry: Industry,
-    //     Price:Price,
-    //     GSTPercentage:GSTPercentage,
-
-    //   }));
-
-    // const serializedGroupedProducts = Object.entries(getdata).map(([ProductName]) => ({
-
-    //     GroupName:GroupName,
-    //     ProductName: ProductName,
-
-
-    //   }));
-
       const serializedGroupedProducts = getdata.map(getdata => ({
         ...getdata,
         GroupTitle:GroupName,
