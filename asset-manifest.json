@@ -1,0 +1,17 @@
+{
+  "files": {
+    "main.css": "/MasterBoqFront/static/css/main.e6c13ad2.css",
+    "main.js": "/MasterBoqFront/static/js/main.c4e9a062.js",
+    "static/js/787.69eaced8.chunk.js": "/MasterBoqFront/static/js/787.69eaced8.chunk.js",
+    "static/media/cart.gif": "/MasterBoqFront/static/media/cart.ce4e9f042bb92d87b30f.gif",
+    "static/media/DeleteIcon.svg": "/MasterBoqFront/static/media/DeleteIcon.d5a8bc853d9d20fd98d5aff311ca4806.svg",
+    "index.html": "/MasterBoqFront/index.html",
+    "main.e6c13ad2.css.map": "/MasterBoqFront/static/css/main.e6c13ad2.css.map",
+    "main.c4e9a062.js.map": "/MasterBoqFront/static/js/main.c4e9a062.js.map",
+    "787.69eaced8.chunk.js.map": "/MasterBoqFront/static/js/787.69eaced8.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.e6c13ad2.css",
+    "static/js/main.c4e9a062.js"
+  ]
+}
