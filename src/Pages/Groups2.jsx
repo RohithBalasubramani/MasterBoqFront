@@ -197,7 +197,7 @@ const Groups2 = () => {
     const [searchTerm, setSearchTerm] = useState("");
 
     useEffect(() => {
-    axios.get("http://localhost:8000/api/get-grouped-products/")
+    axios.get("http://www.boqmasteradmin.com/api/get-grouped-products/")
     .then(response => {
         setData(response.data);
         console.log(response.data);

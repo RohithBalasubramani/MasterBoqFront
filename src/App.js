@@ -14,7 +14,7 @@ const App = () => {
 
 
   useEffect(() => {
-    axios.get("http://localhost:8000/product/")
+    axios.get("http://www.boqmasteradmin.com/product/")
       .then(response => {
         setData(response.data);
       })

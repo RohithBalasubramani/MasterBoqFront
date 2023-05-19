@@ -86,7 +86,7 @@ const Send = (props) => {
       const handlepost = () => {
         props.handleToggleSB();
         
-        axios.post('http://localhost:8000/api/grouped-products/', selectedProducts)
+        axios.post('http://www.boqmasteradmin.com/api/grouped-products/', selectedProducts)
         .then(response => console.log(response.data))
         .catch(error => console.log(error));
         
