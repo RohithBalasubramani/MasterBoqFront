@@ -1,25 +1,57 @@
-import logo from './logo.svg';
-import './App.css';
+import axios from 'axios';
+import React, { useEffect, useState } from 'react'
+import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import MyComponent from './Components/MyComp'
+import ProductList from './Components/ProdListing';
+import ProductListing from './Pages/ProductListing';
+import Cart from './Components/Table';
+import Groups from './Pages/Groups';
+import Groups2 from './Pages/Groups2';
 
-function App() {
+const App = () => {
+
+  const [data, setData] = useState([]);
+
+
+  useEffect(() => {
+    axios.get("http://localhost:8000/product/")
+      .then(response => {
+        setData(response.data);
+      })
+      .catch(error => {
+        console.log(error);
+      });
+  }, []);
+
+  // useEffect(() => {
+  //   axios.get("http://localhost:8000/api/get-grouped-products/")
+  //     .then(response => {
+  //       setData(response.data);
+  //       console.log(response.data);
+
+  //     })
+  //     .catch(error => {
+  //       console.log(error);
+  //     });
+  // }, []);
+
+
+
+
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
-  );
+    <BrowserRouter>
+    <Routes>
+      <Route path="/" element={<ProductListing products={data}/>} />
+      <Route path="/table" element={<Cart/>} />
+      <Route path="/Groups" element={<Groups2/>} />
+
+
+      </Routes>
+    </BrowserRouter>
+  )
 }
 
-export default App;
+export default App
+
+
