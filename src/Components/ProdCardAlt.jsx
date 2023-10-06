@@ -1,21 +1,37 @@
 import { Add } from "@mui/icons-material";
 import React from "react";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import styled from "styled-components";
 import { ADD } from "../Redux/actions/action";
 
 const Container = styled.div`
   background-color: #ffffff;
   padding: 2vh;
-  width: 23.5vw;
-  height: 20vh;
+  width: 16vw;
+  height: 18vh;
   display: block;
+  border-radius: 8px;
   box-shadow: rgba(50, 50, 93, 0.25) 0px 2px 5px -1px,
     rgba(0, 0, 0, 0.3) 0px 1px 3px -1px;
-  border-radius: 8px;
-  background-color: rgba(7, 0, 103, 0.15);
-  backdrop-filter: blur(30px);
-  -webkit-backdrop-filter: blur(30px);
+`;
+
+const Price = styled.div`
+  font-family: Lexend;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 32px;
+  letter-spacing: 0em;
+  text-align: justified;
+  color: #4f4f4f;
+`;
+
+const Title = styled.div`
+  font-family: Lexend;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 20px;
+  letter-spacing: 0em;
+  text-align: justified;
 `;
 
 const Box = styled.button`
@@ -32,17 +48,8 @@ const Box = styled.button`
   }
 `;
 
-const Title = styled.div`
-  font-family: Lexend;
-  font-size: 16px;
-  font-weight: 400;
-  line-height: 20px;
-  letter-spacing: 0em;
-  text-align: justified;
-  width: 80%;
-`;
-
-const ProductCardTwo = ({ Prod }) => {
+const ProductCardAlt = ({ Prod }) => {
+  const getdata = useSelector((state) => state.cartreducer.carts);
   const dispatch = useDispatch();
 
   const send = (e) => {
@@ -51,22 +58,16 @@ const ProductCardTwo = ({ Prod }) => {
     dispatch(ADD(e));
   };
 
-  const ProductName = {};
-
-  for (const [key, value] of Object.entries(Prod)) {
-    ProductName[key] = value.ProductName;
-  }
-
   return (
     <Container>
-      <h3>{Prod.GroupTitle}</h3>
+      <Title>{Prod.ProductName}</Title>
 
-      <Title>{Prod.ProductName.ProductName}</Title>
-      <Box onClick={() => send(Prod.ProductName)}>
+      <Price>Rs. {Prod.Price}</Price>
+      <Box onClick={() => send(Prod)}>
         <Add />
       </Box>
     </Container>
   );
 };
 
-export default ProductCardTwo;
+export default ProductCardAlt;
