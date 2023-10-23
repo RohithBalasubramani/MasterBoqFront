@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import styled from "styled-components";
 import {
   Badge,
@@ -281,33 +281,37 @@ const ProductListing = ({ products }) => {
 
   const [searchTerm, setSearchTerm] = useState("");
   const [headName, setHeadName] = useState("");
-  // const filteredProd = products.filter((product) =>
-  //   product.ProductName.toLowerCase().includes(searchTerm.toLowerCase())
-  // );
 
-  // const filteredProd = products.filter((product) => {
-  //   const subcategories = [
-  //     product.ProductName,
-  //     product.SubCategory,
-  //     product.SubCategory2,
-  //     product.SubCategory3,
-  //     product.SubCategory4,
-  //     product.SubCategory5,
-  //     product.SubCategory6
-  //   ];
+  function debounce(func, delay) {
+    let timeoutId;
+    return function (...args) {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => func(...args), delay);
+    };
+  }
 
-  //   return subcategories.some((subcategory) =>
-  //     subcategory.toLowerCase().includes(searchTerm.toLowerCase())
-  //   );
-  // });
+  // Define a debounced version of the search function
+  const debouncedSearch = useCallback(
+    debounce((searchTerm) => {
+      // Handle search logic here
+      console.log("Searching for:", searchTerm);
+      // Update your state or perform API requests here
+    }, 1000),
+    []
+  ); // Adjust the debounce delay as needed
 
-  const searchKeywords = searchTerm.toLowerCase().split(" ");
+  // Handle search term changes and call the debounced search function
+  const handleSearchChange = (e) => {
+    const newSearchTerm = e.target.value;
+    setSearchTerm(newSearchTerm);
+    debouncedSearch(newSearchTerm);
+  };
+
+  const searchKeywords = searchTerm ? searchTerm.toLowerCase().split(" ") : [];
 
   const filteredProd = products.filter((product) => {
     const subcategories = [
       product.ProductName,
-      // product.Category,
-      // product.Brand,
       product.SubCategory,
       product.SubCategory2,
       product.SubCategory3,
@@ -317,9 +321,12 @@ const ProductListing = ({ products }) => {
     ];
 
     return searchKeywords.every((keyword) =>
-      subcategories.some((subcategory) =>
-        subcategory.toLowerCase().includes(keyword)
-      )
+      subcategories.some((subcategory) => {
+        if (keyword && subcategory) {
+          return subcategory.toLowerCase().includes(keyword.toLowerCase());
+        }
+        return false; // Handle null or undefined values
+      })
     );
   });
 
@@ -422,15 +429,39 @@ const ProductListing = ({ products }) => {
   const allSubCat = Array.from(
     new Set(products.map((product) => product.SubCategory))
   );
+
+  // Assuming selectedBrands and selectedSubCategory are arrays containing the selected criteria.
+
+  const selectedProducts = products.filter((product) => {
+    return (
+      selectedBrands.includes(product.Brand) &&
+      selectedSubCategory.includes(product.SubCategory)
+    );
+  });
+
   const allSubCatTwo = Array.from(
-    new Set(products.map((product) => product.SubCategory2))
+    new Set(
+      selectedProducts
+        .map((product) => product.SubCategory2)
+        .filter((value) => value !== null)
+    )
   );
   const allSubCatFour = Array.from(
-    new Set(products.map((product) => product.SubCategory4))
+    new Set(
+      selectedProducts
+        .map((product) => product.SubCategory4)
+        .filter((value) => value !== null)
+    )
   );
   const allSubCatThree = Array.from(
-    new Set(products.map((product) => product.SubCategory3))
+    new Set(
+      selectedProducts
+        .map((product) => product.SubCategory3)
+        .filter((value) => value !== null)
+    )
   );
+
+  // console.log(searchTerm);
 
   const filteredProducts = filteredProd.filter((product) => {
     if (
@@ -524,10 +555,7 @@ const ProductListing = ({ products }) => {
         </BottomNavigation>
 
         <SearchCon>
-          <SearchAppBar
-            search={searchTerm}
-            onchange={(e) => setSearchTerm(e.target.value)}
-          />
+          <SearchAppBar search={searchTerm} onchange={handleSearchChange} />
         </SearchCon>
 
         <CartCont>
