@@ -439,13 +439,6 @@ const ProductListing = ({ products }) => {
     );
   });
 
-  const allSubCatTwo = Array.from(
-    new Set(
-      selectedProducts
-        .map((product) => product.SubCategory2)
-        .filter((value) => value !== null)
-    )
-  );
   const allSubCatFour = Array.from(
     new Set(
       selectedProducts
@@ -453,9 +446,35 @@ const ProductListing = ({ products }) => {
         .filter((value) => value !== null)
     )
   );
+
+  const selectedProductsTwo = products.filter((product) => {
+    return (
+      selectedBrands.includes(product.Brand) &&
+      selectedSubCategory.includes(product.SubCategory) &&
+      selectedSubFour.includes(product.SubCategory4)
+    );
+  });
+
+  const allSubCatTwo = Array.from(
+    new Set(
+      selectedProductsTwo
+        .map((product) => product.SubCategory2)
+        .filter((value) => value !== null)
+    )
+  );
+
+  const selectedProductsThree = products.filter((product) => {
+    return (
+      selectedBrands.includes(product.Brand) &&
+      selectedSubCategory.includes(product.SubCategory) &&
+      selectedSubFour.includes(product.SubCategory4) &&
+      selectedSubTwo.includes(product.SubCategory2)
+    );
+  });
+
   const allSubCatThree = Array.from(
     new Set(
-      selectedProducts
+      selectedProductsThree
         .map((product) => product.SubCategory3)
         .filter((value) => value !== null)
     )
