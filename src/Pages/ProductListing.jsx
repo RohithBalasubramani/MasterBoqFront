@@ -67,7 +67,7 @@ const Wrapper = styled.div`
   background-color: #ffffff;
   grid-gap: 1vh;
   padding: 2vh;
-  height: 90vh;
+  height: 120vh;
   overflow-y: scroll;
   /* padding-right: 5vh; */
 `;
@@ -261,6 +261,13 @@ const FilterOne = styled.div`
   flex: 1;
 `;
 
+const FilterTwo = styled.div`
+  flex: 1;
+  width: 100%;
+  display: flex;
+  gap: 9vw;
+`;
+
 const ClearFilters = styled.div`
   display: flex;
   margin-left: 8%;
@@ -375,6 +382,8 @@ const ProductListing = ({ products }) => {
   const [selectedSubFour, setselectedSubFour] = useState([]);
   const [selectedSubTwo, setSelectedSubTwo] = useState([]);
   const [selectedSubThree, setSelectedSubThree] = useState([]);
+  const [selectedSubSeven, setSelectedSubSeven] = useState([]);
+  const [selectedSubEight, setSelectedSubEight] = useState([]);
 
   const [priceFilter, setPriceFilter] = useState([0, 100000000]);
   const [sortOrder, setSortOrder] = useState("asc");
@@ -419,6 +428,28 @@ const ProductListing = ({ products }) => {
         selectedSubThree.filter(
           (selectedBrand) => selectedBrand !== SubCategory3
         )
+      );
+    }
+  }
+
+  function handleSubSevenCheckboxChange(event) {
+    const SubCategory7 = event.target.value;
+    if (event.target.checked) {
+      setSelectedSubSeven([...selectedSubSeven, SubCategory7]);
+    } else {
+      setSelectedSubSeven(
+        selectedSubSeven.filter((selected) => selected !== SubCategory7)
+      );
+    }
+  }
+
+  function handleSubEightCheckboxChange(event) {
+    const SubCategory8 = event.target.value;
+    if (event.target.checked) {
+      setSelectedSubEight([...selectedSubEight, SubCategory8]);
+    } else {
+      setSelectedSubEight(
+        selectedSubEight.filter((selected) => selected !== SubCategory8)
       );
     }
   }
@@ -480,6 +511,49 @@ const ProductListing = ({ products }) => {
     )
   );
 
+  const selectedProductsSeven = products.filter((product) => {
+    return (
+      selectedBrands.includes(product.Brand) &&
+      selectedSubCategory.includes(product.SubCategory) &&
+      selectedSubFour.includes(product.SubCategory4) &&
+      selectedSubTwo.includes(product.SubCategory2) &&
+      selectedSubThree.includes(product.SubCategory3)
+      // Add condition for selectedSubSeven
+      // For example:
+      // && selectedSubSeven.includes(product.SubCategory7)
+    );
+  });
+
+  const allSubCatSeven = Array.from(
+    new Set(
+      selectedProductsSeven
+        .map((product) => product.SubCategory7)
+        .filter((value) => value !== null)
+    )
+  );
+
+  const selectedProductsEight = products.filter((product) => {
+    return (
+      selectedBrands.includes(product.Brand) &&
+      selectedSubCategory.includes(product.SubCategory) &&
+      selectedSubFour.includes(product.SubCategory4) &&
+      selectedSubTwo.includes(product.SubCategory2) &&
+      selectedSubThree.includes(product.SubCategory3) &&
+      selectedSubSeven.includes(product.SubCategory7)
+      // Add condition for selectedSubEight
+      // For example:
+      // && selectedSubSeven.includes(product.SubCategory8)
+    );
+  });
+
+  const allSubCatEight = Array.from(
+    new Set(
+      selectedProductsEight
+        .map((product) => product.SubCategory8)
+        .filter((value) => value !== null)
+    )
+  );
+
   // console.log(searchTerm);
 
   const filteredProducts = filteredProd.filter((product) => {
@@ -489,6 +563,12 @@ const ProductListing = ({ products }) => {
       selectedSubTwo.length === 0 &&
       selectedSubThree.length === 0 &&
       selectedSubFour.length === 0 &&
+      (selectedSubSeven.length === 0 ||
+        (product.SubCategory7 &&
+          selectedSubSeven.includes(product.SubCategory7))) &&
+      (selectedSubEight.length === 0 ||
+        (product.SubCategory8 &&
+          selectedSubEight.includes(product.SubCategory8))) &&
       product.Price >= priceFilter[0] &&
       product.Price <= priceFilter[1]
     ) {
@@ -500,6 +580,12 @@ const ProductListing = ({ products }) => {
         selectedSubTwo.includes(product.SubCategory2) &&
         selectedSubThree.includes(product.SubCategory3) &&
         selectedSubFour.includes(product.SubCategory4) &&
+        (selectedSubSeven.length === 0 ||
+          (product.SubCategory7 &&
+            selectedSubSeven.includes(product.SubCategory7))) &&
+        (selectedSubEight.length === 0 ||
+          (product.SubCategory8 &&
+            selectedSubEight.includes(product.SubCategory8))) &&
         product.Price >= priceFilter[0] &&
         product.Price <= priceFilter[1]
       );
@@ -529,6 +615,8 @@ const ProductListing = ({ products }) => {
     setSelectedSubTwo([]);
     setSelectedSubThree([]);
     setselectedSubFour([]);
+    setSelectedSubSeven([]);
+    setSelectedSubEight([]);
     setPriceFilter([findMinMax("Price").min, findMinMax("Price").max]);
   };
 
@@ -735,6 +823,53 @@ const ProductListing = ({ products }) => {
           {/* <button onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}>
           Sort by Price ({sortOrder === 'asc' ? 'Low to High' : 'High to Low'})
       </button> */}
+
+          <FilterTwo>
+            {/* ... */}
+            <div>
+              <FilterHead>Sub Cat 4</FilterHead>
+              {allSubCatSeven.map((SubCategory7) => (
+                <FilterCont key={SubCategory7}>
+                  <Checkbox
+                    type="checkbox"
+                    value={SubCategory7}
+                    checked={selectedSubSeven.includes(SubCategory7)}
+                    onChange={(event) => handleSubSevenCheckboxChange(event)}
+                    sx={{
+                      color: "#E0E0E0",
+                      "&.Mui-checked": {
+                        color: "#ff6600",
+                      },
+                    }}
+                    // Add any custom styling or props if needed
+                  />
+                  {SubCategory7}
+                </FilterCont>
+              ))}
+            </div>
+
+            <div>
+              <FilterHead>Sub Cat 5</FilterHead>
+              {allSubCatEight.map((SubCategory8) => (
+                <FilterCont key={SubCategory8}>
+                  <Checkbox
+                    type="checkbox"
+                    value={SubCategory8}
+                    checked={selectedSubEight.includes(SubCategory8)}
+                    onChange={(event) => handleSubEightCheckboxChange(event)}
+                    sx={{
+                      color: "#E0E0E0",
+                      "&.Mui-checked": {
+                        color: "#ff6600",
+                      },
+                    }}
+                    // Add any custom styling or props if needed
+                  />
+                  {SubCategory8}
+                </FilterCont>
+              ))}
+            </div>
+          </FilterTwo>
         </FilterWrap>
 
         <WrapperWhole>
