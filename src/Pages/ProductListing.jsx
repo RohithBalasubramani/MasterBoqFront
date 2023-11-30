@@ -511,6 +511,19 @@ const ProductListing = ({ products }) => {
     )
   );
 
+  const [sortedSubCatThree, setSortedSubCatThree] = useState([]);
+
+  useEffect(() => {
+    // Sorting the allSubCatThree array in ascending order
+    const sortedSubCat = [...allSubCatThree].sort((a, b) => {
+      return a.localeCompare(b, undefined, {
+        numeric: true,
+        sensitivity: "base",
+      });
+    });
+    setSortedSubCatThree(sortedSubCat);
+  }, [allSubCatThree]);
+
   const selectedProductsSeven = products.filter((product) => {
     return (
       selectedBrands.includes(product.Brand) &&
@@ -799,7 +812,7 @@ const ProductListing = ({ products }) => {
             <FilterTwoCont>
               <FilterHead> Sub Cat 3 </FilterHead>
               <FilterContTwo>
-                {allSubCatThree.map((SubCategory3) => (
+                {sortedSubCatThree.map((SubCategory3) => (
                   <FilterCont key={SubCategory3}>
                     <Checkbox
                       type="checkbox"
