@@ -4,6 +4,7 @@ import { HashRouter, Route, Routes } from "react-router-dom";
 import ProductListing from "./Pages/ProductListing";
 import Cart from "./Components/Table";
 import Groups2 from "./Pages/Groups2";
+import AuxiliaryListing from "./Pages/Auxiliaries";
 
 const App = () => {
   const [data, setData] = useState([]);
@@ -37,6 +38,7 @@ const App = () => {
         <Route path="/" element={<ProductListing products={data} />} />
         <Route path="/table" element={<Cart />} />
         <Route path="/Groups" element={<Groups2 />} />
+        <Route path="/auxiliaries" element={<AuxiliaryListing />} />
       </Routes>
     </HashRouter>
   );

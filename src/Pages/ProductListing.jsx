@@ -178,9 +178,9 @@ const StyledBadge = sty(Badge)(({ theme }) => ({
 }));
 
 const CustomBottomNavigationAction = sty(BottomNavigationAction)(`
-  color: #fff700;
+  color: #ffffff;
   &.Mui-selected {
-    color: #ffffff;
+    color: #fff700;
   }
 `);
 
@@ -633,7 +633,7 @@ const ProductListing = ({ products }) => {
     setPriceFilter([findMinMax("Price").min, findMinMax("Price").max]);
   };
 
-  const [value, setValue] = React.useState(1);
+  const [value, setValue] = React.useState(0);
 
   const [valueAuto, setValueAuto] = useState("L&T");
   const [valueAutoTwo, setValueAutoTwo] = useState("");
@@ -653,7 +653,7 @@ const ProductListing = ({ products }) => {
             borderRadius: "20px",
             color: "#b2b2b2",
             "& .Mui-selected, .Mui-selected > svg": {
-              color: "#ffffff",
+              color: "#fff700",
             },
           }}
           onChange={(event, newValue) => {
@@ -664,13 +664,22 @@ const ProductListing = ({ products }) => {
             component={Link}
             to="/"
             label="Home"
+            value={0}
             icon={<Inventory />}
           />
           <CustomBottomNavigationAction
             component={Link}
             to="/Groups"
             label="Groups"
+            value={1}
             icon={<Category />}
+          />
+          <CustomBottomNavigationAction
+            component={Link}
+            to="/auxiliaries"
+            label="Auxiliaries"
+            icon={<BackupTable />}
+            value={2}
           />
         </BottomNavigation>
 

@@ -8,6 +8,7 @@ import { CSVLink } from "react-csv";
 import { Alert, Backdrop, IconButton, Paper, Snackbar } from "@mui/material";
 import { Close } from "@mui/icons-material";
 import Send from "../Components/Cart/Send";
+import { exportDataToExcel } from "../Components/Cart/exportdataToExcel";
 
 const Container = styled.div`
   height: max-content;
@@ -126,6 +127,7 @@ const CartTab2 = () => {
   // console.log(price);
 
   const getdata = useSelector((state) => state.cartreducer.carts);
+  const [formattedData, setFormattedData] = useState([]);
   // console.log(getdata);
   const dispatch = useDispatch();
 
@@ -158,6 +160,10 @@ const CartTab2 = () => {
       Price = ele.Price * ele.quantity + Price;
     });
     setPrice(Price);
+  };
+
+  const handleExport = () => {
+    exportDataToExcel(getdata, "BOQ.xlsx");
   };
 
   useEffect(() => {
@@ -193,7 +199,7 @@ const CartTab2 = () => {
     return { ...item, totalPrice };
   });
 
-  // console.log(multipliedData);
+  console.log(multipliedData);
 
   return (
     <Container>
@@ -290,17 +296,17 @@ const CartTab2 = () => {
               <SummaryItemText>Total</SummaryItemText>
               <SummaryItemPrice>₹ {Math.ceil(price)}</SummaryItemPrice>
             </SummaryItem>
-            <CSVLink data={multipliedData}>
-              <Button> EXPORT </Button>
-            </CSVLink>
+
+            <Button onClick={handleExport}> EXPORT </Button>
           </Summary>
         </Bottom>
 
         <Infocont>
           <Info>
-            <CSVLink data={multipliedData}>
-              <Button type="filled"> EXPORT </Button>
-            </CSVLink>
+            <Button type="filled" onClick={handleExport}>
+              {" "}
+              EXPORT{" "}
+            </Button>
           </Info>
         </Infocont>
       </Wrapper>

@@ -138,7 +138,7 @@ const CartTab = () => {
   const getdata = useSelector((state) => state.cartreducer.carts);
   // console.log(getdata);
   const [data, setdata] = useState(getdata);
-  // console.log(data);
+  console.log("table data", data);
 
   const dispatch = useDispatch();
 
@@ -268,68 +268,31 @@ const CartTab = () => {
               </TableHead>
 
               <TableBody>
-                {data.map((row) => (
+                {data.map((row, index) => (
                   <TableRow
-                    key={row.rname}
+                    key={row.id || index} // Use row.id if it's unique, fallback to index if necessary.
                     sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
                   >
                     <TableCell align="left">
                       <Refno>{row.Heading}</Refno>
                     </TableCell>
-
                     <TableCell component="th" scope="row">
-                      <ProdName> {row.ProductName}</ProdName>
+                      <ProdName>{row.ProductName}</ProdName>
                     </TableCell>
-
-                    {/* <TableCell align="left">
-                                <Refno>{row.ModelNumber}</Refno> 
-                                </TableCell>       */}
-                    {/* 
-                                <TableCell align="left">
-                                    <Refno>{row.Category}</Refno> 
-                                </TableCell>     */}
-
-                    {/* <TableCell align="left">
-                                    <Refno>{row.SubCategory}</Refno> 
-                                </TableCell>         
-
-                                
-                                <TableCell align="left">
-                                    <Refno>{row.SubCategory2}</Refno> 
-                                </TableCell>         
-
-
-                                
-                                <TableCell align="left">
-                                    <Refno>{row.SubCategory3}</Refno> 
-                                </TableCell>         
-
-                                <TableCell align="left">
-                                    <Refno>{row.SubCategory4}</Refno> 
-                                </TableCell>       */}
-
                     <TableCell align="left">
                       <Refno>{row.Brand}</Refno>
                     </TableCell>
-
                     <TableCell align="left">
                       <Refno>{row.ModelNumber}</Refno>
                     </TableCell>
-
                     <TableCell align="left">
                       <Refno>{row.SubCategory}</Refno>
                     </TableCell>
-
-                    {/* <TableCell align="left">
-                                    <Refno>{row.Industry}</Refno> 
-                                </TableCell>       */}
-
                     <TableCell align="left">
                       <ProdPrice>
-                        <Price>₹ {row.Price} </Price>
+                        <Price>₹ {row.Price}</Price>
                       </ProdPrice>
                     </TableCell>
-
                     <TableCell align="right">
                       <Quant>
                         <ValueButtonDecrease
@@ -351,13 +314,11 @@ const CartTab = () => {
                         </ValueButtonIncrease>
                       </Quant>
                     </TableCell>
-
                     <TableCell align="right">
                       <ProdPrice>
                         <Price>₹ {Math.ceil(row.Price * row.quantity)}</Price>
                       </ProdPrice>
                     </TableCell>
-
                     <TableCell align="left">
                       <IconButton
                         sx={{
@@ -369,7 +330,7 @@ const CartTab = () => {
                         }}
                         onClick={() => dlt(row.id)}
                       >
-                        <DeleteIcon />{" "}
+                        <DeleteIcon />
                       </IconButton>
                     </TableCell>
                   </TableRow>
