@@ -4,9 +4,10 @@ import { useDispatch } from "react-redux";
 import styled from "styled-components";
 import { ADD } from "../Redux/actions/action";
 import axios from "axios";
+import { Snackbar, Alert } from "@mui/material";
 
 const Container = styled.div`
-  padding: 0vh;
+  padding: 2vh;
   width: 95%;
   margin-bottom: 1.5vh;
   display: inline-flex;
@@ -81,15 +82,51 @@ const LoadingMessage = styled.div`
   color: #000000;
 `;
 
+const ShowLessButton = styled.button`
+  margin-top: 1vh;
+  margin-bottom: 2vh;
+  margin-left: 90%;
+  margin-right: 0%;
+  width: max-content;
+
+  background-color: rgba(240, 240, 0, 0.3);
+  color: #4a4a4a;
+  border: 1px dotted black;
+  border-radius: 5px;
+  padding: 0.5vh 1vh;
+  cursor: pointer;
+  &:hover {
+    background-color: rgba(240, 240, 0, 0.6);
+  }
+`;
+
+const ToggleAuxButton = styled.button`
+  background-color: rgba(7, 0, 103, 0.3);
+  color: #ffffff;
+  border: none;
+  border-radius: 5px;
+  padding: 0.5vh 1vh;
+  cursor: pointer;
+  &:hover {
+    background-color: rgba(7, 0, 103, 0.6);
+  }
+  margin-right: 0%;
+  margin-left: auto;
+`;
+
 const ProductCard = ({ Prod, HeadName }) => {
   const dispatch = useDispatch();
   const [showAuxiliaries, setShowAuxiliaries] = useState(false);
   const [auxiliaries, setAuxiliaries] = useState([]);
   const [filteredAuxiliaries, setFilteredAuxiliaries] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
 
   const send = (e) => {
     dispatch(ADD(e));
+    setSnackbarMessage(`${e.ProductName} has been added to your BOQ Table`);
+    setSnackbarOpen(true); // Open snackbar with product name message
   };
 
   const prodWithKey = {
@@ -98,60 +135,87 @@ const ProductCard = ({ Prod, HeadName }) => {
     quantity: 1,
   };
 
-  // Function to fetch auxiliaries when needed
   const fetchAuxiliaries = async () => {
     try {
-      setLoading(true); // Start loading
+      setLoading(true);
       const response = await axios.get(
         "https://www.boqmasteradmin.com/auxiliaries/"
-      ); // Replace with your actual endpoint
+      );
       setAuxiliaries(response.data);
     } catch (error) {
       console.error("Error fetching auxiliaries:", error);
     } finally {
-      setLoading(false); // End loading
+      setLoading(false);
     }
   };
 
-  // Function to filter auxiliaries based on your criteria
+  const filterAuxiliaries = (auxiliaries, product) => {
+    return auxiliaries.filter((auxiliary) => {
+      // Split and trim SubCategory6 of auxiliaries
+      const auxSubCat6Values = auxiliary.SubCategory6
+        ? auxiliary.SubCategory6.split(",").map((value) => value.trim())
+        : [];
+      // Check if SubCategory6 matches SubCategory9 of the product
+      const matchSubCat6 = auxSubCat6Values.includes(product.SubCategory9);
+
+      if (!matchSubCat6) {
+        return false;
+      }
+
+      // Split and trim SubCategory3 of auxiliaries if it exists
+      const auxSubCat3Values = auxiliary.SubCategory3
+        ? auxiliary.SubCategory3.split(",").map((value) => value.trim())
+        : [];
+      // Check if SubCategory3 of auxiliaries matches SubCategory4 of the product
+      const matchSubCat3 =
+        !auxiliary.SubCategory3 ||
+        auxSubCat3Values.includes(product.SubCategory4);
+
+      if (!matchSubCat3) {
+        return false;
+      }
+
+      // Split and trim SubCategory5 of auxiliaries if it exists
+      const auxSubCat5Values = auxiliary.SubCategory5
+        ? auxiliary.SubCategory5.split(",").map((value) => value.trim())
+        : [];
+      // Check if SubCategory5 of auxiliaries matches SubCategory3 of the product
+      const matchSubCat5 =
+        !auxiliary.SubCategory5 ||
+        auxSubCat5Values.includes(product.SubCategory3);
+
+      return matchSubCat5;
+    });
+  };
+
   useEffect(() => {
     if (auxiliaries.length > 0) {
-      const filtered = auxiliaries.filter((auxiliary) => {
-        // Split auxiliary's SubCategory6 into an array
-        const auxSubCat6Values = auxiliary.SubCategory6
-          ? auxiliary.SubCategory6.split(",").map((value) => value.trim())
-          : [];
-
-        // Check if auxiliary's SubCategory6 contains the product's SubCategory8
-        const matchSubCat6 = auxSubCat6Values.includes(Prod.SubCategory8);
-
-        if (!matchSubCat6) {
-          return false;
-        }
-
-        // Initialize matches as true
-        let matchSubCat3 = true;
-
-        // If auxiliary's SubCategory3 is present, it must match product's SubCategory4
-        if (auxiliary.SubCategory3) {
-          const auxSubCat3Values = auxiliary.SubCategory3.split(",").map(
-            (value) => value.trim()
-          );
-          matchSubCat3 = auxSubCat3Values.includes(Prod.SubCategory4);
-        }
-
-        // Return true only if all conditions are met
-        return matchSubCat3;
-      });
-
-      setFilteredAuxiliaries(filtered);
+      setFilteredAuxiliaries(filterAuxiliaries(auxiliaries, Prod));
     }
   }, [auxiliaries, Prod]);
 
   const handleAddClick = async () => {
     send(prodWithKey);
-    await fetchAuxiliaries(); // Fetch auxiliaries when the add button is clicked
-    setShowAuxiliaries(true); // Show auxiliaries
+    await fetchAuxiliaries();
+    setShowAuxiliaries(true);
+  };
+
+  const handleToggleAuxClick = async () => {
+    if (!showAuxiliaries) {
+      await fetchAuxiliaries();
+    }
+    setShowAuxiliaries(!showAuxiliaries);
+  };
+
+  const handleShowLessClick = () => {
+    setShowAuxiliaries(false);
+  };
+
+  const handleSnackbarClose = (event, reason) => {
+    if (reason === "clickaway") {
+      return;
+    }
+    setSnackbarOpen(false); // Close snackbar when dismissed
   };
 
   return (
@@ -162,6 +226,9 @@ const ProductCard = ({ Prod, HeadName }) => {
         </Box>
         <Title>{prodWithKey.ProductName}</Title>
         <Price>(Rs. {prodWithKey.Price})</Price>
+        <ToggleAuxButton onClick={handleToggleAuxClick}>
+          {showAuxiliaries ? "Hide Auxiliaries" : "Show Auxiliaries"}
+        </ToggleAuxButton>
       </Container>
       <div>
         {loading && <LoadingMessage>Loading auxiliaries...</LoadingMessage>}
@@ -179,9 +246,32 @@ const ProductCard = ({ Prod, HeadName }) => {
                 </AuxBox>
               ))}
             </AuxiliaryList>
+            <ShowLessButton onClick={handleShowLessClick}>
+              Hide Auxiliaries
+            </ShowLessButton>
           </AuxiliariesContainer>
         )}
       </div>
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={3000}
+        onClose={handleSnackbarClose}
+        anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+      >
+        <Alert
+          onClose={handleSnackbarClose}
+          variant="filled"
+          severity="success"
+          sx={{
+            maxWidth: "45vw",
+            height: "100%",
+            background: "rgba(240, 240, 0, 0.421)",
+            color: "black",
+          }}
+        >
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </div>
   );
 };
