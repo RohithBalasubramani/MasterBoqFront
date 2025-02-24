@@ -156,7 +156,7 @@ const ProductCard = ({ Prod, HeadName }) => {
         ? auxiliary.SubCategory6.split(",").map((value) => value.trim())
         : [];
       // Check if SubCategory6 matches SubCategory9 of the product
-      const matchSubCat6 = auxSubCat6Values.includes(product.SubCategory9);
+      const matchSubCat6 = auxSubCat6Values.includes(product.SubCategory8);
 
       if (!matchSubCat6) {
         return false;
