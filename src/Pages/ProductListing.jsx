@@ -62,14 +62,11 @@ const CartCont = styled.div`
 
 const Wrapper = styled.div`
   width: 100%;
-  /* display: grid;
-    grid-template-columns: auto auto auto; */
   background-color: #ffffff;
   grid-gap: 1vh;
   padding: 2vh;
   height: 120vh;
   overflow-y: scroll;
-  /* padding-right: 5vh; */
 `;
 
 const WrapperWhole = styled.div`
@@ -155,6 +152,7 @@ const SortText = styled.div`
   margin-top: auto;
   margin-bottom: auto;
 `;
+
 const WrapperFlex = styled.div`
   width: 100%;
   display: flex;
@@ -169,7 +167,6 @@ const FilterFlex = styled.div`
 const StyledBadge = sty(Badge)(({ theme }) => ({
   "& .MuiBadge-badge": {
     right: -1,
-
     border: `2px solid ${theme.palette.background.paper}`,
     padding: "0 4px",
     backgroundColor: "#fff700",
@@ -199,7 +196,6 @@ const IOSSlider = sty(Slider)(({ theme }) => ({
     "&:focus, &:hover, &.Mui-active": {
       boxShadow:
         "0 3px 1px rgba(0,0,0,0.1),0 4px 8px rgba(0,0,0,0.3),0 0 0 1px rgba(0,0,0,0.02)",
-      // Reset on touch devices, it doesn't add specificity
       "@media (hover: none)": {
         boxShadow: iOSBoxShadow,
       },
@@ -281,7 +277,6 @@ const NameInput = styled.div`
 const ProductListing = ({ products }) => {
   // Cart
   const cart = useSelector((state) => state.cartreducer.carts);
-  // console.log(cart);
   let cartlen = cart.length;
   const [anchorEl, setAnchorEl] = useState(null);
   const opencart = Boolean(anchorEl);
@@ -289,6 +284,7 @@ const ProductListing = ({ products }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [headName, setHeadName] = useState("");
 
+  // Debounce logic
   function debounce(func, delay) {
     let timeoutId;
     return function (...args) {
@@ -297,17 +293,13 @@ const ProductListing = ({ products }) => {
     };
   }
 
-  // Define a debounced version of the search function
   const debouncedSearch = useCallback(
     debounce((searchTerm) => {
-      // Handle search logic here
       console.log("Searching for:", searchTerm);
-      // Update your state or perform API requests here
     }, 1000),
     []
-  ); // Adjust the debounce delay as needed
+  );
 
-  // Handle search term changes and call the debounced search function
   const handleSearchChange = (e) => {
     const newSearchTerm = e.target.value;
     setSearchTerm(newSearchTerm);
@@ -326,57 +318,48 @@ const ProductListing = ({ products }) => {
       product.SubCategory5,
       product.SubCategory6,
     ];
-
     return searchKeywords.every((keyword) =>
       subcategories.some((subcategory) => {
         if (keyword && subcategory) {
           return subcategory.toLowerCase().includes(keyword.toLowerCase());
         }
-        return false; // Handle null or undefined values
+        return false;
       })
     );
   });
 
   function findMinMax(key) {
     const datas = products.map((node) => node[key]);
-
     return {
       min: Math.min(...datas),
       max: Math.max(...datas),
     };
   }
 
-  // console.log(findMinMax("Price").min);
-
   const marks = [
     {
       value: findMinMax("Price").min,
       label: "min",
     },
-
     {
       value: (findMinMax("Price").min + findMinMax("Price").max) / 4,
       label: "25%",
     },
-
     {
       value: (findMinMax("Price").min + findMinMax("Price").max) / 2,
       label: "50%",
     },
-
     {
       value: ((findMinMax("Price").min + findMinMax("Price").max) * 3) / 4,
       label: "75%",
     },
-
     {
       value: findMinMax("Price").max,
       label: "max",
     },
   ];
 
-  //Brand Filtering//
-
+  // Filter states
   const [selectedBrands, setSelectedBrands] = useState([]);
   const [selectedSubCategory, setSelectedSubCategory] = useState([]);
   const [selectedSubFour, setselectedSubFour] = useState([]);
@@ -385,19 +368,21 @@ const ProductListing = ({ products }) => {
   const [selectedSubSeven, setSelectedSubSeven] = useState([]);
   const [selectedSubEight, setSelectedSubEight] = useState([]);
 
+  // New filters for SubCategory11 & SubCategory12
+  const [selectedSubEleven, setSelectedSubEleven] = useState([]);
+  const [selectedSubTwelve, setSelectedSubTwelve] = useState([]);
+
   const [priceFilter, setPriceFilter] = useState([0, 100000000]);
   const [sortOrder, setSortOrder] = useState("asc");
 
-  // Brandcheckbox
+  // Handlers for existing filters
   function handleBrandCheckboxChange(event) {
     const SubCategory4 = event.target.value;
     if (event.target.checked) {
       setselectedSubFour([...selectedSubFour, SubCategory4]);
     } else {
       setselectedSubFour(
-        selectedSubFour.filter(
-          (selectedSubFour) => selectedSubFour !== SubCategory4
-        )
+        selectedSubFour.filter((item) => item !== SubCategory4)
       );
     }
   }
@@ -406,28 +391,22 @@ const ProductListing = ({ products }) => {
     setPriceFilter(newValue);
   };
 
-  // subcat1
   function handleSubTwoCheckboxChange(event) {
     const SubCategory2 = event.target.value;
     if (event.target.checked) {
       setSelectedSubTwo([...selectedSubTwo, SubCategory2]);
     } else {
-      setSelectedSubTwo(
-        selectedSubTwo.filter((selectedBrand) => selectedBrand !== SubCategory2)
-      );
+      setSelectedSubTwo(selectedSubTwo.filter((item) => item !== SubCategory2));
     }
   }
 
-  // subcat2
   function handleSubThreeCheckboxChange(event) {
     const SubCategory3 = event.target.value;
     if (event.target.checked) {
       setSelectedSubThree([...selectedSubThree, SubCategory3]);
     } else {
       setSelectedSubThree(
-        selectedSubThree.filter(
-          (selectedBrand) => selectedBrand !== SubCategory3
-        )
+        selectedSubThree.filter((item) => item !== SubCategory3)
       );
     }
   }
@@ -454,22 +433,40 @@ const ProductListing = ({ products }) => {
     }
   }
 
-  const allBrands = Array.from(
-    new Set(products.map((product) => product.Brand))
-  );
-  const allSubCat = Array.from(
-    new Set(products.map((product) => product.SubCategory))
-  );
+  // Handlers for SubCategory11 & SubCategory12
+  function handleSubElevenCheckboxChange(event) {
+    const SubCategory11 = event.target.value;
+    if (event.target.checked) {
+      setSelectedSubEleven([...selectedSubEleven, SubCategory11]);
+    } else {
+      setSelectedSubEleven(
+        selectedSubEleven.filter((selected) => selected !== SubCategory11)
+      );
+    }
+  }
 
-  // Assuming selectedBrands and selectedSubCategory are arrays containing the selected criteria.
+  function handleSubTwelveCheckboxChange(event) {
+    const SubCategory12 = event.target.value;
+    if (event.target.checked) {
+      setSelectedSubTwelve([...selectedSubTwelve, SubCategory12]);
+    } else {
+      setSelectedSubTwelve(
+        selectedSubTwelve.filter((selected) => selected !== SubCategory12)
+      );
+    }
+  }
 
+  // Brand, SubCat arrays
+  const allBrands = Array.from(new Set(products.map((p) => p.Brand)));
+  const allSubCat = Array.from(new Set(products.map((p) => p.SubCategory)));
+
+  // Next-level filtering for SubCat4
   const selectedProducts = products.filter((product) => {
     return (
       selectedBrands.includes(product.Brand) &&
       selectedSubCategory.includes(product.SubCategory)
     );
   });
-
   const allSubCatFour = Array.from(
     new Set(
       selectedProducts
@@ -478,6 +475,7 @@ const ProductListing = ({ products }) => {
     )
   );
 
+  // Next-level filtering for SubCat2
   const selectedProductsTwo = products.filter((product) => {
     return (
       selectedBrands.includes(product.Brand) &&
@@ -485,7 +483,6 @@ const ProductListing = ({ products }) => {
       selectedSubFour.includes(product.SubCategory4)
     );
   });
-
   const allSubCatTwo = Array.from(
     new Set(
       selectedProductsTwo
@@ -494,6 +491,7 @@ const ProductListing = ({ products }) => {
     )
   );
 
+  // Next-level filtering for SubCat3
   const selectedProductsThree = products.filter((product) => {
     return (
       selectedBrands.includes(product.Brand) &&
@@ -502,7 +500,6 @@ const ProductListing = ({ products }) => {
       selectedSubTwo.includes(product.SubCategory2)
     );
   });
-
   const allSubCatThree = Array.from(
     new Set(
       selectedProductsThree
@@ -512,9 +509,7 @@ const ProductListing = ({ products }) => {
   );
 
   const [sortedSubCatThree, setSortedSubCatThree] = useState([]);
-
   useEffect(() => {
-    // Sorting the allSubCatThree array in ascending order
     const sortedSubCat = [...allSubCatThree].sort((a, b) => {
       return a.localeCompare(b, undefined, {
         numeric: true,
@@ -524,6 +519,7 @@ const ProductListing = ({ products }) => {
     setSortedSubCatThree(sortedSubCat);
   }, [allSubCatThree]);
 
+  // Next-level filtering for SubCat7
   const selectedProductsSeven = products.filter((product) => {
     return (
       selectedBrands.includes(product.Brand) &&
@@ -531,12 +527,8 @@ const ProductListing = ({ products }) => {
       selectedSubFour.includes(product.SubCategory4) &&
       selectedSubTwo.includes(product.SubCategory2) &&
       selectedSubThree.includes(product.SubCategory3)
-      // Add condition for selectedSubSeven
-      // For example:
-      // && selectedSubSeven.includes(product.SubCategory7)
     );
   });
-
   const allSubCatSeven = Array.from(
     new Set(
       selectedProductsSeven
@@ -545,6 +537,7 @@ const ProductListing = ({ products }) => {
     )
   );
 
+  // Next-level filtering for SubCat8
   const selectedProductsEight = products.filter((product) => {
     return (
       selectedBrands.includes(product.Brand) &&
@@ -553,12 +546,8 @@ const ProductListing = ({ products }) => {
       selectedSubTwo.includes(product.SubCategory2) &&
       selectedSubThree.includes(product.SubCategory3) &&
       selectedSubSeven.includes(product.SubCategory7)
-      // Add condition for selectedSubEight
-      // For example:
-      // && selectedSubSeven.includes(product.SubCategory8)
     );
   });
-
   const allSubCatEight = Array.from(
     new Set(
       selectedProductsEight
@@ -567,9 +556,60 @@ const ProductListing = ({ products }) => {
     )
   );
 
-  // console.log(searchTerm);
+  // New sub-eleven filtering
+  const selectedProductsEleven = products.filter((product) => {
+    return (
+      selectedBrands.includes(product.Brand) &&
+      selectedSubCategory.includes(product.SubCategory) &&
+      selectedSubFour.includes(product.SubCategory4) &&
+      selectedSubTwo.includes(product.SubCategory2) &&
+      selectedSubThree.includes(product.SubCategory3) &&
+      (selectedSubSeven.length === 0 ||
+        (product.SubCategory7 &&
+          selectedSubSeven.includes(product.SubCategory7))) &&
+      (selectedSubEight.length === 0 ||
+        (product.SubCategory8 &&
+          selectedSubEight.includes(product.SubCategory8)))
+    );
+  });
+  const allSubCatEleven = Array.from(
+    new Set(
+      selectedProductsEleven
+        .map((product) => product.SubCategory11)
+        .filter((value) => value !== null)
+    )
+  );
 
+  // New sub-twelve filtering
+  const selectedProductsTwelve = products.filter((product) => {
+    return (
+      selectedBrands.includes(product.Brand) &&
+      selectedSubCategory.includes(product.SubCategory) &&
+      selectedSubFour.includes(product.SubCategory4) &&
+      selectedSubTwo.includes(product.SubCategory2) &&
+      selectedSubThree.includes(product.SubCategory3) &&
+      (selectedSubSeven.length === 0 ||
+        (product.SubCategory7 &&
+          selectedSubSeven.includes(product.SubCategory7))) &&
+      (selectedSubEight.length === 0 ||
+        (product.SubCategory8 &&
+          selectedSubEight.includes(product.SubCategory8))) &&
+      (selectedSubEleven.length === 0 ||
+        (product.SubCategory11 &&
+          selectedSubEleven.includes(product.SubCategory11)))
+    );
+  });
+  const allSubCatTwelve = Array.from(
+    new Set(
+      selectedProductsTwelve
+        .map((product) => product.SubCategory12)
+        .filter((value) => value !== null)
+    )
+  );
+
+  // Final filtered list
   const filteredProducts = filteredProd.filter((product) => {
+    // If no subcategory/brand is selected (except optional sub7, sub8, sub11, sub12), show all that match price + optional checks
     if (
       selectedSubCategory.length === 0 &&
       selectedBrands.length === 0 &&
@@ -582,6 +622,12 @@ const ProductListing = ({ products }) => {
       (selectedSubEight.length === 0 ||
         (product.SubCategory8 &&
           selectedSubEight.includes(product.SubCategory8))) &&
+      (selectedSubEleven.length === 0 ||
+        (product.SubCategory11 &&
+          selectedSubEleven.includes(product.SubCategory11))) &&
+      (selectedSubTwelve.length === 0 ||
+        (product.SubCategory12 &&
+          selectedSubTwelve.includes(product.SubCategory12))) &&
       product.Price >= priceFilter[0] &&
       product.Price <= priceFilter[1]
     ) {
@@ -599,6 +645,12 @@ const ProductListing = ({ products }) => {
         (selectedSubEight.length === 0 ||
           (product.SubCategory8 &&
             selectedSubEight.includes(product.SubCategory8))) &&
+        (selectedSubEleven.length === 0 ||
+          (product.SubCategory11 &&
+            selectedSubEleven.includes(product.SubCategory11))) &&
+        (selectedSubTwelve.length === 0 ||
+          (product.SubCategory12 &&
+            selectedSubTwelve.includes(product.SubCategory12))) &&
         product.Price >= priceFilter[0] &&
         product.Price <= priceFilter[1]
       );
@@ -619,9 +671,6 @@ const ProductListing = ({ products }) => {
     return `₹${value}`;
   }
 
-  // console.log(selectedBrands);
-  // console.log(headName);
-
   const handleClearFilters = () => {
     setSelectedSubCategory([]);
     setSelectedBrands([]);
@@ -630,6 +679,8 @@ const ProductListing = ({ products }) => {
     setselectedSubFour([]);
     setSelectedSubSeven([]);
     setSelectedSubEight([]);
+    setSelectedSubEleven([]);
+    setSelectedSubTwelve([]);
     setPriceFilter([findMinMax("Price").min, findMinMax("Price").max]);
   };
 
@@ -639,8 +690,6 @@ const ProductListing = ({ products }) => {
   const [valueAutoTwo, setValueAutoTwo] = useState("");
   const [inputValue, setInputValue] = useState("");
   const [inputValueTwo, setInputValueTwo] = useState("");
-
-  // console.log(selectedBrands);
 
   return (
     <Container>
@@ -704,37 +753,12 @@ const ProductListing = ({ products }) => {
 
       <Containerwhole>
         <FilterWrap>
-          {/* <PriceWrap>
-            <FilterHead>
-              {" "}
-              Price Range (Rs.{priceFilter[0]}-Rs.{priceFilter[1]} ){" "}
-              <ClearFilters>
-                Clear Filters
-                <IconButton>
-                  <Remove onClick={handleClearFilters} />
-                </IconButton>
-              </ClearFilters>
-            </FilterHead>
-            <IOSSlider
-              id="price-filter"
-              value={priceFilter}
-              getAriaValueText={valuetext}
-              onChange={handlePriceChange}
-              step={50}
-              min={findMinMax("Price").min}
-              max={findMinMax("Price").max}
-              valueLabelDisplay="auto"
-              marks={marks}
-            />
-          </PriceWrap> */}
-
           <PriceWrap>
             <Autocomplete
               disablePortal
               value={selectedBrands}
               onChange={(event, newValueAuto) => {
                 setValueAuto(newValueAuto);
-                // setSelectedBrands(newValueAuto);
               }}
               id="combo-box-demo"
               options={allBrands}
@@ -744,7 +768,6 @@ const ProductListing = ({ products }) => {
                 setInputValue(newInputValue);
                 setSelectedBrands(newInputValue);
               }}
-              // onChange={(event) => handleBrandCheckboxChange(event)}
               renderInput={(params) => <TextField {...params} label="Brand" />}
             />
 
@@ -753,7 +776,6 @@ const ProductListing = ({ products }) => {
               value={selectedSubCategory}
               onChange={(event, newValueAuto) => {
                 setValueAutoTwo(newValueAuto);
-                // setSelectedBrands(newValueAuto);
               }}
               id="combo-box-demo"
               options={allSubCat}
@@ -763,7 +785,6 @@ const ProductListing = ({ products }) => {
                 setInputValueTwo(newInputValueTwo);
                 setSelectedSubCategory(newInputValueTwo);
               }}
-              // onChange={(event) => handleBrandCheckboxChange(event)}
               renderInput={(params) => (
                 <TextField {...params} label="Sub-Cat" />
               )}
@@ -779,14 +800,14 @@ const ProductListing = ({ products }) => {
 
           <FilterFlex>
             <FilterOne>
-              <FilterHead> Sub Cat 1 </FilterHead>
+              <FilterHead>Sub Cat 1</FilterHead>
               {allSubCatFour.map((SubCategory4) => (
                 <FilterCont key={SubCategory4}>
                   <Checkbox
                     type="checkbox"
                     value={SubCategory4}
                     checked={selectedSubFour.includes(SubCategory4)}
-                    onChange={(event) => handleBrandCheckboxChange(event)}
+                    onChange={handleBrandCheckboxChange}
                     sx={{
                       color: "#E0E0E0",
                       "&.Mui-checked": {
@@ -798,14 +819,14 @@ const ProductListing = ({ products }) => {
                 </FilterCont>
               ))}
 
-              <FilterHead> Sub Cat 2 </FilterHead>
+              <FilterHead>Sub Cat 2</FilterHead>
               {allSubCatTwo.map((SubCategory2) => (
                 <FilterCont key={SubCategory2}>
                   <Checkbox
                     type="checkbox"
                     value={SubCategory2}
                     checked={selectedSubTwo.includes(SubCategory2)}
-                    onChange={(event) => handleSubTwoCheckboxChange(event)}
+                    onChange={handleSubTwoCheckboxChange}
                     sx={{
                       color: "#E0E0E0",
                       "&.Mui-checked": {
@@ -819,7 +840,7 @@ const ProductListing = ({ products }) => {
             </FilterOne>
 
             <FilterTwoCont>
-              <FilterHead> Sub Cat 3 </FilterHead>
+              <FilterHead>Sub Cat 3</FilterHead>
               <FilterContTwo>
                 {sortedSubCatThree.map((SubCategory3) => (
                   <FilterCont key={SubCategory3}>
@@ -827,7 +848,7 @@ const ProductListing = ({ products }) => {
                       type="checkbox"
                       value={SubCategory3}
                       checked={selectedSubThree.includes(SubCategory3)}
-                      onChange={(event) => handleSubThreeCheckboxChange(event)}
+                      onChange={handleSubThreeCheckboxChange}
                       sx={{
                         color: "#E0E0E0",
                         "&.Mui-checked": {
@@ -841,13 +862,12 @@ const ProductListing = ({ products }) => {
               </FilterContTwo>
             </FilterTwoCont>
           </FilterFlex>
-
-          {/* <button onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}>
-          Sort by Price ({sortOrder === 'asc' ? 'Low to High' : 'High to Low'})
-      </button> */}
-
+          <br />
+          <div style={{ borderTop: "1px dotted #ccc", margin: "20px 0" }} />
+          <h4 style={{ color: "#b6b6b6" }}>FILTERS</h4>
+          <div style={{ borderTop: "1px dotted #ccc", margin: "20px 0" }} />
+          <br />
           <FilterTwo>
-            {/* ... */}
             <div>
               <FilterHead>Sub Cat 4</FilterHead>
               {allSubCatSeven.map((SubCategory7) => (
@@ -856,14 +876,13 @@ const ProductListing = ({ products }) => {
                     type="checkbox"
                     value={SubCategory7}
                     checked={selectedSubSeven.includes(SubCategory7)}
-                    onChange={(event) => handleSubSevenCheckboxChange(event)}
+                    onChange={handleSubSevenCheckboxChange}
                     sx={{
                       color: "#E0E0E0",
                       "&.Mui-checked": {
                         color: "#ff6600",
                       },
                     }}
-                    // Add any custom styling or props if needed
                   />
                   {SubCategory7}
                 </FilterCont>
@@ -878,20 +897,68 @@ const ProductListing = ({ products }) => {
                     type="checkbox"
                     value={SubCategory8}
                     checked={selectedSubEight.includes(SubCategory8)}
-                    onChange={(event) => handleSubEightCheckboxChange(event)}
+                    onChange={handleSubEightCheckboxChange}
                     sx={{
                       color: "#E0E0E0",
                       "&.Mui-checked": {
                         color: "#ff6600",
                       },
                     }}
-                    // Add any custom styling or props if needed
                   />
                   {SubCategory8}
                 </FilterCont>
               ))}
             </div>
           </FilterTwo>
+
+          {/*
+            New containers for SubCategory11 & SubCategory12
+          */}
+          <FilterTwoCont>
+            <FilterHead>Sub Cat 6</FilterHead>
+            <FilterContTwo>
+              {allSubCatEleven.map((SubCategory11) => (
+                <FilterCont key={SubCategory11}>
+                  <Checkbox
+                    type="checkbox"
+                    value={SubCategory11}
+                    checked={selectedSubEleven.includes(SubCategory11)}
+                    onChange={handleSubElevenCheckboxChange}
+                    sx={{
+                      color: "#E0E0E0",
+                      "&.Mui-checked": {
+                        color: "#ff6600",
+                      },
+                    }}
+                  />
+                  {SubCategory11}
+                </FilterCont>
+              ))}
+            </FilterContTwo>
+          </FilterTwoCont>
+
+          <FilterTwoCont>
+            <FilterHead>Sub Cat 7</FilterHead>
+            <FilterContTwo>
+              {allSubCatTwelve.map((SubCategory12) => (
+                <FilterCont key={SubCategory12}>
+                  <Checkbox
+                    type="checkbox"
+                    value={SubCategory12}
+                    checked={selectedSubTwelve.includes(SubCategory12)}
+                    onChange={handleSubTwelveCheckboxChange}
+                    sx={{
+                      color: "#E0E0E0",
+                      "&.Mui-checked": {
+                        color: "#ff6600",
+                      },
+                    }}
+                  />
+                  {SubCategory12}
+                </FilterCont>
+              ))}
+            </FilterContTwo>
+          </FilterTwoCont>
         </FilterWrap>
 
         <WrapperWhole>
@@ -900,21 +967,18 @@ const ProductListing = ({ products }) => {
             <WrapperTit>{searchTerm}</WrapperTit>
             <WrapperFlex>
               <WrapperNum>‘{count}’ Results</WrapperNum>
-
               <Sort>
                 <NameInput>
                   <TextField
                     id="outlined-basic"
                     label="Header"
                     variant="outlined"
-                    sx={{}}
                     size="small"
                     onChange={(e) => setHeadName(e.target.value)}
                   />
                 </NameInput>
 
                 <SortText>Sort by price:</SortText>
-
                 <FormControl sx={{ m: 1, minWidth: 120 }} size="small">
                   <Select
                     id="demo-simple-select"
@@ -937,7 +1001,11 @@ const ProductListing = ({ products }) => {
           </WrapperHead>
           <Wrapper>
             {sortedProducts.map((product) => (
-              <ProductCard HeadName={headName} Prod={product} />
+              <ProductCard
+                key={product.id}
+                HeadName={headName}
+                Prod={product}
+              />
             ))}
           </Wrapper>
         </WrapperWhole>
