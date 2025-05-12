@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 import {
   Badge,
@@ -12,6 +12,8 @@ import {
   Slider,
   Autocomplete,
   TextField,
+  Button,
+  Input,
 } from "@mui/material";
 import { styled as sty } from "@mui/material/styles";
 import ProductCard from "../Components/ProductCard";
@@ -19,6 +21,8 @@ import SearchAppBar from "../Components/StyledSearch";
 import { BackupTable, Category, Inventory, Remove } from "@mui/icons-material";
 import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
+import Filter from "../Components/Filters/Filter";
+import axios from "axios";
 
 const Container = styled.div`
   background-color: #ffffff;
@@ -35,10 +39,16 @@ const Containerwhole = styled.div`
 
 const FilterWrap = styled.div`
   flex: 5;
-  height: 100vh;
+  height: 90vh;
   background: #ffffff;
   margin-left: 5vh;
   margin-right: 5vh;
+  overflow-y: auto;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  &::-webkit-scrollbar: {
+    display: none;
+  }
 `;
 
 const HeadCon = styled.div`
@@ -65,7 +75,7 @@ const Wrapper = styled.div`
   background-color: #ffffff;
   grid-gap: 1vh;
   padding: 2vh;
-  height: 120vh;
+  height: 65vh;
   overflow-y: scroll;
 `;
 
@@ -274,7 +284,64 @@ const NameInput = styled.div`
   padding: 10px;
 `;
 
-const ProductListing = ({ products }) => {
+const ProductListing = () => {
+  const [selectedBrand, setSelectedBrand] = useState(null);
+  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [selectedSubCategory1, setSelectedSubCategory1] = useState([]);
+  const [selectedSubCategory2, setSelectedSubCategory2] = useState([]);
+  const [selectedSubCategory3, setSelectedSubCategory3] = useState([]);
+  const [applyFilter, setApplyFilter] = useState(false);
+  const [products, setProducts] = useState([]);
+  const [nextUrl, setNextUrl] = useState("https://www.boqmasteradmin.com/product/");
+  const [nextFilterUrl, setNextFilterUrl] = useState(
+    "https://www.boqmasteradmin.com/product/filter/"
+  );
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [count, setCount] = useState(0);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const fetchProducts = async (url = null) => {
+    if ((nextUrl || url) && !loading) {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const response = await axios.get(url ? url : nextUrl);
+        const data = response.data;
+
+        setProducts((prev) => [...prev, ...data.results]);
+        setNextUrl(data.next);
+        setCount(data.count);
+      } catch (err) {
+        console.error("Fetch error:", err);
+        setError("Failed to load products. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+
+  const fetchProductsWithFilter = async (payload, url = null) => {
+    if ((nextFilterUrl || url) && !loading) {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const response = await axios.post(url ? url : nextFilterUrl, payload);
+        const data = response.data;
+
+        setProducts((prev) => [...prev, ...data.results]);
+        setNextFilterUrl(data.next);
+        setCount(data.count);
+      } catch (err) {
+        console.error("Fetch error:", err);
+        setError("Failed to load products. Please try again.");
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
   // Cart
   const cart = useSelector((state) => state.cartreducer.carts);
   let cartlen = cart.length;
@@ -283,6 +350,63 @@ const ProductListing = ({ products }) => {
 
   const [searchTerm, setSearchTerm] = useState("");
   const [headName, setHeadName] = useState("");
+  const scrollContainerRef = useRef(null);
+
+  useEffect(() => {
+    axios
+      .get("https://www.boqmasteradmin.com/product/")
+      .then((response) => {
+        setProducts(response.data.results);
+        setNextUrl(response.data.next);
+        setCount(response.data.count);
+      })
+      .catch((error) => {
+        console.log(error);
+      });
+  }, []);
+
+  useEffect(() => {
+    const scrollContainer = scrollContainerRef.current;
+
+    const handleScroll = () => {
+      if (!scrollContainer) return;
+
+      const { scrollTop, scrollHeight, clientHeight } = scrollContainer;
+
+      if (scrollTop + clientHeight >= scrollHeight - 50 && !loading) {
+        if (applyFilter) {
+          let payload = {
+            brand: selectedBrand,
+            subCategory: selectedCategory,
+            subCategory1: selectedSubCategory1,
+            subCategory2: selectedSubCategory2,
+            subCategory3: selectedSubCategory3,
+          };
+          fetchProductsWithFilter(payload);
+        } else {
+          fetchProducts();
+        }
+      }
+    };
+
+    scrollContainer?.addEventListener("scroll", handleScroll);
+    return () => scrollContainer?.removeEventListener("scroll", handleScroll);
+  }, [fetchProducts, loading]);
+
+  const handleSearchQueryChange = (e) => {
+    setSearchQuery(e.target.value);
+  };
+
+  const handleSearch = () => {
+    setSelectedBrand(null);
+    setSelectedCategory(null);
+    setSelectedSubCategory1([]);
+    setSelectedSubCategory2([]);
+    setSelectedSubCategory3([]);
+    setProducts([]);
+    setApplyFilter(false);
+    fetchProducts(`https://www.boqmasteradmin.com/product/?search=${searchQuery}`);
+  };
 
   // Debounce logic
   function debounce(func, delay) {
@@ -657,8 +781,6 @@ const ProductListing = ({ products }) => {
     }
   });
 
-  const count = filteredProducts.length;
-
   const sortedProducts = filteredProducts.slice().sort((a, b) => {
     if (sortOrder === "asc") {
       return a.Price - b.Price;
@@ -690,6 +812,42 @@ const ProductListing = ({ products }) => {
   const [valueAutoTwo, setValueAutoTwo] = useState("");
   const [inputValue, setInputValue] = useState("");
   const [inputValueTwo, setInputValueTwo] = useState("");
+
+  const callFetchProductsWithFilter = () => {
+    if (
+      selectedBrand ||
+      selectedCategory ||
+      selectedSubCategory1.length > 0 ||
+      selectedSubCategory2.length > 0 ||
+      selectedSubCategory3.length > 0
+    ) {
+      let payload = {
+        brand: selectedBrand,
+        subCategory: selectedCategory,
+        subCategory1: selectedSubCategory1,
+        subCategory2: selectedSubCategory2,
+        subCategory3: selectedSubCategory3,
+      };
+      setProducts([]);
+      let url = "https://www.boqmasteradmin.com/product/filter/";
+      setApplyFilter(true);
+      fetchProductsWithFilter(payload, url);
+    }
+  };
+
+  const clearFilters = () => {
+    if(applyFilter){
+      setSelectedBrand(null);
+      setSelectedCategory(null);
+      setSelectedSubCategory1([]);
+      setSelectedSubCategory2([]);
+      setSelectedSubCategory3([]);
+      setProducts([]);
+      let url = "https://www.boqmasteradmin.com/product/";
+      setApplyFilter(false);
+      fetchProducts(url);
+    }
+  };
 
   return (
     <Container>
@@ -733,9 +891,13 @@ const ProductListing = ({ products }) => {
         </BottomNavigation>
 
         <SearchCon>
-          <SearchAppBar search={searchTerm} onchange={handleSearchChange} />
+          {/* <SearchAppBar search={searchTerm} onchange={handleSearchChange} /> */}
+          <SearchAppBar
+            search={searchQuery}
+            onchange={handleSearchQueryChange}
+          />
         </SearchCon>
-
+        <Button onClick={handleSearch}>Search</Button>
         <CartCont>
           <IconButton component={Link} to="/table" sx={{ color: "white" }}>
             <StyledBadge
@@ -753,9 +915,34 @@ const ProductListing = ({ products }) => {
 
       <Containerwhole>
         <FilterWrap>
-          <PriceWrap>
+          {/* <PriceWrap>
+            <FilterHead>
+              {" "}
+              Price Range (Rs.{priceFilter[0]}-Rs.{priceFilter[1]} ){" "}
+              <ClearFilters>
+                Clear Filters
+                <IconButton>
+                  <Remove onClick={handleClearFilters} />
+                </IconButton>
+              </ClearFilters>
+            </FilterHead>
+            <IOSSlider
+              id="price-filter"
+              value={priceFilter}
+              getAriaValueText={valuetext}
+              onChange={handlePriceChange}
+              step={50}
+              min={findMinMax("Price").min}
+              max={findMinMax("Price").max}
+              valueLabelDisplay="auto"
+              marks={marks}
+            />
+          </PriceWrap> */}
+
+          {/* <PriceWrap>
             <Autocomplete
               disablePortal
+              multiple
               value={selectedBrands}
               onChange={(event, newValueAuto) => {
                 setValueAuto(newValueAuto);
@@ -773,6 +960,7 @@ const ProductListing = ({ products }) => {
 
             <Autocomplete
               disablePortal
+              multiple
               value={selectedSubCategory}
               onChange={(event, newValueAuto) => {
                 setValueAutoTwo(newValueAuto);
@@ -796,9 +984,24 @@ const ProductListing = ({ products }) => {
                 <Remove onClick={handleClearFilters} />
               </IconButton>
             </ClearFilters>
-          </PriceWrap>
-
-          <FilterFlex>
+          </PriceWrap> */}
+          <Filter
+            selectedBrand={selectedBrand}
+            selectedCategory={selectedCategory}
+            selectedSubCategory1={selectedSubCategory1}
+            selectedSubCategory2={selectedSubCategory2}
+            selectedSubCategory3={selectedSubCategory3}
+            setSelectedBrand={setSelectedBrand}
+            setSelectedCategory={setSelectedCategory}
+            setSelectedSubCategory1={setSelectedSubCategory1}
+            setSelectedSubCategory2={setSelectedSubCategory2}
+            setSelectedSubCategory3={setSelectedSubCategory3}
+          />
+          <Button onClick={() => callFetchProductsWithFilter()}>
+            Apply Filter
+          </Button>
+          <Button onClick={() => clearFilters()}>Clear Filter</Button>
+          {/* <FilterFlex>
             <FilterOne>
               <FilterHead>Sub Cat 1</FilterHead>
               {allSubCatFour.map((SubCategory4) => (
@@ -967,17 +1170,22 @@ const ProductListing = ({ products }) => {
             <WrapperTit>{searchTerm}</WrapperTit>
             <WrapperFlex>
               <WrapperNum>‘{count}’ Results</WrapperNum>
+
               <Sort>
                 <NameInput>
-                  <TextField
+                  {/* <TextField
                     id="outlined-basic"
                     label="Header"
                     variant="outlined"
                     size="small"
                     onChange={(e) => setHeadName(e.target.value)}
+                  /> */}
+                  <Input
+                    value={searchTerm}
+                    onChange={handleSearchChange}
+                    placeholder="Search"
                   />
                 </NameInput>
-
                 <SortText>Sort by price:</SortText>
                 <FormControl sx={{ m: 1, minWidth: 120 }} size="small">
                   <Select
@@ -999,7 +1207,7 @@ const ProductListing = ({ products }) => {
               </Sort>
             </WrapperFlex>
           </WrapperHead>
-          <Wrapper>
+          <Wrapper ref={scrollContainerRef}>
             {sortedProducts.map((product) => (
               <ProductCard
                 key={product.id}
@@ -1007,6 +1215,9 @@ const ProductListing = ({ products }) => {
                 Prod={product}
               />
             ))}
+            {loading && <div className="spinner">🔄 Loading more...</div>}
+            {error && <div style={{ color: "red" }}>{error}</div>}
+            {!nextUrl && !loading && <p>✅ All products loaded.</p>}
           </Wrapper>
         </WrapperWhole>
       </Containerwhole>
