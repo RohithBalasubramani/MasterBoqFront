@@ -1,13 +1,12 @@
 import axios from "axios";
 import React, { useCallback, useEffect, useState } from "react";
 import { HashRouter, Route, Routes } from "react-router-dom";
-import ProductListing from "./Pages/ProductListing";
+import ProductListing from "./Pages/ProductListing.jsx";
 import Cart from "./Components/Table";
 import Groups2 from "./Pages/Groups2";
 import AuxiliaryListing from "./Pages/Auxiliaries";
 
 const App = () => {
-
   // const fetchProducts = useCallback(async () => {
   //   if (!nextUrl || loading) return;
 
@@ -37,7 +36,7 @@ const App = () => {
   //   setError(null);
 
   //   try {
-      
+
   //     const response = await axios.post(nextFilterUrl, payload);
   //     const data = response.data;
 
@@ -53,7 +52,7 @@ const App = () => {
   //   }
   // };
 
-    // useEffect(() => {
+  // useEffect(() => {
   //   axios.get("http://localhost:8000/api/get-grouped-products/")
   //     .then(response => {
   //       setData(response.data);
@@ -72,16 +71,16 @@ const App = () => {
           path="/"
           element={
             <ProductListing
-              // products={data}
-              // count={count}
-              // fetchProducts={fetchProducts}
-              // loading={loading}
-              // error={error}
-              // nextUrl={nextUrl}
-              // setNextUrl={setNextUrl}
-              // setNextFilterUrl={setNextFilterUrl}
-              // setData={setData}
-              // fetchProductsWithFilter={fetchProductsWithFilter}
+            // products={data}
+            // count={count}
+            // fetchProducts={fetchProducts}
+            // loading={loading}
+            // error={error}
+            // nextUrl={nextUrl}
+            // setNextUrl={setNextUrl}
+            // setNextFilterUrl={setNextFilterUrl}
+            // setData={setData}
+            // fetchProductsWithFilter={fetchProductsWithFilter}
             />
           }
         />

@@ -8,9 +8,8 @@ const Cont = styled("div")`
   background-color: ${(props) => props.bg};
   color: ${(props) => props.col};
   border-radius: 8px;
-  border-width: 2px;
-  border-style: solid;
-  border-color: ${(props) => props.bor};
+  height: auto;
+  width: auto;
 `;
 
 const IconWrap = styled("div")`
@@ -70,7 +69,7 @@ const StyledInputBase = styled(InputBase)(({ theme }) => ({
 
 export default function SearchAppBar({ search, onchange }) {
   return (
-    <Cont bg="#F2F2F2" bor="#E0E0E0" col="#4F4F4F">
+    <Cont bg="#F2F2F2" col="#4F4F4F">
       <Search>
         <IconWrap>
           <SearchIcon />
@@ -81,6 +80,7 @@ export default function SearchAppBar({ search, onchange }) {
           inputProps={{ "aria-label": "search" }}
           onChange={onchange}
           value={search}
+          width="100%"
         />
       </Search>
     </Cont>

@@ -216,13 +216,21 @@ const ProductListing = () => {
   const [error, setError] = useState(null);
   const [count, setCount] = useState(0);
 
-  /* ―― unified search term (front‑end only) ―― */
+  const [searchQuery, setSearchQuery] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [headName, setHeadName] = useState("");
 
   /* price / brand / category filters (client‑side) */
+  const [selectedBrands, setSelectedBrands] = useState([]);
+  const [selectedSubCategory, setSelectedSubCategory] = useState([]);
+  const [selectedSubFour, setSelectedSubFour] = useState([]);
+  const [selectedSubTwo, setSelectedSubTwo] = useState([]);
+  const [selectedSubThree, setSelectedSubThree] = useState([]);
+  const [selectedSubSeven, setSelectedSubSeven] = useState([]);
+  const [selectedSubEight, setSelectedSubEight] = useState([]);
   const [selectedSubEleven, setSelectedSubEleven] = useState([]);
   const [selectedSubTwelve, setSelectedSubTwelve] = useState([]);
+  const [priceFilter, setPriceFilter] = useState([0, 100000000]);
   const [sortOrder, setSortOrder] = useState("asc");
 
   /* ---------------- refs ---------------- */
@@ -242,7 +250,7 @@ const ProductListing = () => {
         const data = res.data;
         setProducts((prev) => [...prev, ...data.results]);
         setNextUrl(data.next);
-        setCount((prev) => prev + data.results.length);
+        setCount(data.count);
       } catch (_) {
         setError("Failed to load products. Please try again.");
       } finally {
@@ -260,7 +268,7 @@ const ProductListing = () => {
         const data = res.data;
         setProducts((prev) => [...prev, ...data.results]);
         setNextFilterUrl(data.next);
-        setCount((prev) => prev + data.results.length);
+        setCount(data.count);
       } catch (_) {
         setError("Failed to load products. Please try again.");
       } finally {
@@ -300,7 +308,7 @@ const ProductListing = () => {
     return () => container.removeEventListener("scroll", onScroll);
   }, [applyFilter, loading, selectedBrand, selectedCategory]);
 
-  /* ---------------- debounce search ---------------- */
+  /* ---------------- search ---------------- */
   const debounce = (fn, delay) => {
     let t;
     return (...args) => {
@@ -309,20 +317,32 @@ const ProductListing = () => {
     };
   };
   const debouncedSearch = useCallback(
-    debounce((term) => setSearchTerm(term), 300),
+    debounce((term) => console.log("Searching:", term), 1000),
     []
   );
-
   const handleSearchChange = (e) => {
     const val = e.target.value;
+    setSearchTerm(val);
     debouncedSearch(val);
+  };
+  const handleSearchQueryChange = (e) => setSearchQuery(e.target.value);
+  const handleSearch = () => {
+    setSelectedBrand(null);
+    setSelectedCategory(null);
+    setSelectedSubCategory1([]);
+    setSelectedSubCategory2([]);
+    setSelectedSubCategory3([]);
+    setApplyFilter(false);
+    setProducts([]);
+    fetchProducts(
+      `https://www.boqmasteradmin.com/product/?search=${searchQuery}`
+    );
   };
 
   /* ---------------- helpers ---------------- */
   const searchKeywords = searchTerm ? searchTerm.toLowerCase().split(" ") : [];
 
   const filteredBySearch = products.filter((p) => {
-    if (!searchKeywords.length) return true;
     const subs = [
       p.ProductName,
       p.SubCategory,
@@ -333,11 +353,11 @@ const ProductListing = () => {
       p.SubCategory6,
     ];
     return searchKeywords.every((kw) =>
-      subs.some((sub) => sub && sub.toLowerCase().includes(kw))
+      subs.some((sub) => sub && sub.toLowerCase().includes(kw.toLowerCase()))
     );
   });
 
-  /* dynamic sub‑cat 11 & 12 lists */
+  /* ---------------- dynamic sub‑cat 11 & 12 lists ---------------- */
   const allSubCatEleven = Array.from(
     new Set(products.map((p) => p.SubCategory11).filter(Boolean))
   );
@@ -345,17 +365,13 @@ const ProductListing = () => {
     new Set(products.map((p) => p.SubCategory12).filter(Boolean))
   );
 
-  /* apply filters that are purely client‑side (left unchanged) */
-  const finalProducts = filteredBySearch; // ← extend with price/brand filters if needed
+  /* apply sliders / brand / sub‑cat filters – left unchanged for brevity */
+  const finalProducts = filteredBySearch; // ← existing filtering kept
 
-  /* sort */
-  const parsePrice = (v) => (isNaN(parseFloat(v)) ? Infinity : parseFloat(v));
   const sortedProducts = finalProducts
     .slice()
     .sort((a, b) =>
-      sortOrder === "asc"
-        ? parsePrice(a.Price) - parsePrice(b.Price)
-        : parsePrice(b.Price) - parsePrice(a.Price)
+      sortOrder === "asc" ? a.Price - b.Price : b.Price - a.Price
     );
 
   /* ---------------- CTA helpers ---------------- */
@@ -375,12 +391,10 @@ const ProductListing = () => {
         subCategory3: selectedSubCategory3,
       };
       setProducts([]);
-      setCount(0);
       setApplyFilter(true);
       fetchProductsWithFilter(payload, nextFilterUrl);
     }
   };
-
   const clearFilters = () => {
     if (applyFilter) {
       setSelectedBrand(null);
@@ -389,9 +403,7 @@ const ProductListing = () => {
       setSelectedSubCategory2([]);
       setSelectedSubCategory3([]);
       setProducts([]);
-      setCount(0);
       setApplyFilter(false);
-      setNextUrl("https://www.boqmasteradmin.com/product/");
       fetchProducts("https://www.boqmasteradmin.com/product/");
     }
   };
@@ -439,9 +451,14 @@ const ProductListing = () => {
           />
         </BottomNavigation>
 
-        {/* unified in‑memory search */}
         <SearchCon bg="#f2f2f2" bor="#e0e0e0" col="#4f4f4f">
-          <SearchAppBar search={searchTerm} onchange={handleSearchChange} />
+          <SearchAppBar
+            search={searchQuery}
+            onchange={handleSearchQueryChange}
+          />
+          <OutlineButton style={{ marginLeft: "auto" }} onClick={handleSearch}>
+            Search
+          </OutlineButton>
         </SearchCon>
 
         <CartCont>
@@ -479,7 +496,60 @@ const ProductListing = () => {
           </StickyBottom>
 
           {/* Sub Cat 6 → all unique SubCategory11 */}
-          {/* … unchanged checkbox code for SubCategory11 & 12 … */}
+          <div style={{ display: "flex", gap: "1.5vw", marginBottom: "2vh" }}>
+            <FilterTwoCont>
+              <FilterHead>Sub Cat 6</FilterHead>
+              <FilterContTwo>
+                {allSubCatEleven.map((sub11) => (
+                  <FilterCont key={sub11}>
+                    <Checkbox
+                      value={sub11}
+                      checked={selectedSubEleven.includes(sub11)}
+                      onChange={(e) =>
+                        setSelectedSubEleven((prev) =>
+                          e.target.checked
+                            ? [...prev, sub11]
+                            : prev.filter((v) => v !== sub11)
+                        )
+                      }
+                      sx={{
+                        color: "#e0e0e0",
+                        "&.Mui-checked": { color: "#ff6600" },
+                      }}
+                    />
+                    {sub11}
+                  </FilterCont>
+                ))}
+              </FilterContTwo>
+            </FilterTwoCont>
+
+            {/* Sub Cat 7 → all unique SubCategory12 */}
+            <FilterTwoCont>
+              <FilterHead>Sub Cat 7</FilterHead>
+              <FilterContTwo>
+                {allSubCatTwelve.map((sub12) => (
+                  <FilterCont key={sub12}>
+                    <Checkbox
+                      value={sub12}
+                      checked={selectedSubTwelve.includes(sub12)}
+                      onChange={(e) =>
+                        setSelectedSubTwelve((prev) =>
+                          e.target.checked
+                            ? [...prev, sub12]
+                            : prev.filter((v) => v !== sub12)
+                        )
+                      }
+                      sx={{
+                        color: "#e0e0e0",
+                        "&.Mui-checked": { color: "#ff6600" },
+                      }}
+                    />
+                    {sub12}
+                  </FilterCont>
+                ))}
+              </FilterContTwo>
+            </FilterTwoCont>
+          </div>
         </FilterWrap>
 
         {/* ─── products column ─── */}
@@ -487,7 +557,7 @@ const ProductListing = () => {
           <WrapperHead>
             <WrapperTit>{searchTerm}</WrapperTit>
             <WrapperFlex>
-              <WrapperNum>{count} Results</WrapperNum>
+              <WrapperNum>‘{count}’ Results</WrapperNum>
               <NameInput style={{ marginLeft: 16 }}>
                 <TextField
                   label="Card Header"
@@ -500,7 +570,7 @@ const ProductListing = () => {
                 <NameInput>
                   <Input
                     value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
+                    onChange={handleSearchChange}
                     placeholder="Search"
                   />
                 </NameInput>

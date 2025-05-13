@@ -1,316 +1,202 @@
-import CartTab from "../Components/Cart/CartTab";
-import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import styled from "styled-components";
-import { RESET } from "../Redux/actions/action";
-import { CSVLink } from "react-csv";
-import { Alert, Backdrop, IconButton, Paper, Snackbar } from "@mui/material";
+import { Link } from "react-router-dom";
+import { Backdrop, Paper, Snackbar, Alert, IconButton } from "@mui/material";
 import { Close } from "@mui/icons-material";
-import Send from "../Components/Cart/Send";
+import { RESET } from "../Redux/actions/action";
 import { exportDataToExcel } from "../Components/Cart/exportdataToExcel";
+import CartTab, {
+  PrimaryButton,
+  OutlineButton,
+} from "../Components/Cart/CartTab";
+import Send from "../Components/Cart/Send";
 
-const Container = styled.div`
-  height: max-content;
-  width: 100%;
+/* palette */
+const primary = "#09193D";
+const accent = "#FFF700";
+
+/* ───────── layout cards ───────── */
+const Wrap = styled.div`
   background: #f9f9f9;
+  padding: 4vh 4vw;
 `;
-
-const Wrapper = styled.div`
-  padding: 20px;
+const Header = styled.div`
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 4vh;
 `;
-
 const Title = styled.h1`
-  font-family: Lexend;
-  font-size: 6vh;
-  font-weight: 400;
-  line-height: 30px;
-  letter-spacing: 0em;
-  text-align: left;
-
-  text-transform: capitalize;
-  color: #000000;
+  margin: 0;
+  font-size: clamp(1.8rem, 4vw, 2.6rem);
+  color: ${primary};
 `;
-
-const Top = styled.div`
+const Body = styled.div`
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 20px;
+  gap: 3vw;
+  flex-wrap: wrap;
 `;
-
-const TopButton = styled.button`
-  padding: 2vh;
-  font-weight: 600;
-  font-size: 16px;
-  border-radius: 10px;
-  cursor: pointer;
-  border: ${(props) => props.type === "filled" && "none"};
-  background-color: ${(props) =>
-    props.type === "filled" ? "#09193D" : "transparent"};
-  color: ${(props) => props.type === "filled" && "white"};
-  &:hover {
-    background-color: #09193d;
-    color: #ffffff;
-  }
-`;
-
-const TopButtonDiv = styled.div`
-  margin-left: 60%;
-  display: flex;
-  gap: 3vh;
-`;
-
-const Bottom = styled.div`
-  display: flex;
-  justify-content: space-between;
-`;
-
 const Info = styled.div`
-  width: 75%;
-  margin-right: 3vh;
-  /* margin-left:75vw; */
+  flex: 3;
+  min-width: 280px;
 `;
-
-const Infocont = styled.div`
-  width: 95vw;
-`;
-
-const Button = styled.button`
-  width: 100%;
-  padding: 2vh;
-  font-weight: 600;
-  font-size: 16px;
-  border-radius: 10px;
-  background-color: #09193d;
-  color: #ffffff;
-  font-weight: 600;
-  margin-top: 1vh;
-  &:hover {
-    background-color: transparent;
-    color: #09193d;
-  }
-`;
-
-const Wrapper2 = styled.div`
-  display: block;
-  align-items: center;
-  margin-right: 0%;
-  margin-left: 96%;
-`;
-
-const Summary = styled.div`
+const Summary = styled.aside`
   flex: 1;
-  border: 0.5px solid lightgray;
-  border-radius: 10px;
-  padding: 20px;
+  min-width: 240px;
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 2vh 2vw;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 `;
-
-const SummaryTitle = styled.h1`
-  font-weight: 200;
+const SumHead = styled.h2`
+  margin: 0 0 1.4rem;
+  font-size: 1.4rem;
+  color: ${primary};
 `;
-
-const SummaryItem = styled.div`
-  margin: 30px 0px;
+const Row = styled.div`
   display: flex;
   justify-content: space-between;
-  font-weight: ${(props) => props.type === "total" && "500"};
-  font-size: ${(props) => props.type === "total" && "24px"};
+  margin: 1vh 0;
+  font-size: ${({ total }) => (total ? "1.1rem" : "0.95rem")};
+  font-weight: ${({ total }) => (total ? 600 : 400)};
+  color: ${({ total }) => (total ? primary : "#4f4f4f")};
 `;
 
-const SummaryItemText = styled.span``;
+/* ───────── popup ───────── */
+const popSX = {
+  width: "min(90vw,460px)",
+  maxHeight: "80vh",
+  p: "3vh 4vw 4vh",
+  position: "relative",
+};
+const CloseBtn = styled(IconButton)`
+  position: absolute !important;
+  top: 8px;
+  right: 8px;
+`;
 
-const SummaryItemPrice = styled.span``;
+/* ───────── helpers ───────── */
+const isNum = (x) => !isNaN(parseFloat(x));
 
+/* ───────── component ───────── */
 const CartTab2 = () => {
-  const [price, setPrice] = useState(0);
-  // console.log(price);
-
-  const getdata = useSelector((state) => state.cartreducer.carts);
-  const [formattedData, setFormattedData] = useState([]);
-  // console.log(getdata);
   const dispatch = useDispatch();
+  const items = useSelector((s) => s.cartreducer.carts);
 
-  const [open, setOpen] = React.useState(false);
-  const [openSnackBar, setOpenSnackBar] = React.useState(false);
-  const [qua, setQua] = useState(1);
+  /* numeric subtotal */
+  const subtotal = items.reduce(
+    (sum, i) => (isNum(i.Price) ? sum + parseFloat(i.Price) * i.quantity : sum),
+    0
+  );
 
-  const reset = () => {
-    dispatch(RESET());
-  };
+  /* #products (not qty) that need a quote */
+  const quotesNeeded = items.filter((i) => !isNum(i.Price)).length;
 
-  const handleClose = () => {
-    setOpen(false);
-  };
-  const handleToggle = () => {
-    setOpen(!open);
-  };
-
-  const handleToggleSB = () => {
-    setOpenSnackBar(true);
-  };
-
-  const handleCloseSB = (event, reason) => {
-    setOpenSnackBar(false);
-  };
-
-  const total = () => {
-    let Price = 0;
-    getdata.map((ele, k) => {
-      Price = ele.Price * ele.quantity + Price;
-    });
-    setPrice(Price);
-  };
-
-  const handleExport = () => {
-    exportDataToExcel(getdata, "BOQ.xlsx");
-  };
-
-  useEffect(() => {
-    total();
-  }, [qua]);
-
-  // const selectedKeys = ["Heading", "ProductName", "Brand", "Price", "quantity"];
-  // const selectedData = selectedKeys.reduce((acc, key) => {
-  //   acc[key] = getdata[key];
-  //   return acc;
-  // }, {});
-
-  // console.log(selectedData);
-
-  // Extracting only selected keys using object spread
-  const selectedKeys = [
-    "Heading",
-    "ProductName",
-    "Brand",
-    "SubCategory",
-    "ModelNumber",
-    "Price",
-    "quantity",
-  ];
-  const extractedData = getdata.map((item) => {
-    const selectedData = {};
-    selectedKeys.forEach((key) => (selectedData[key] = item[key]));
-    return selectedData;
-  });
-
-  const multipliedData = extractedData.map((item) => {
-    const totalPrice = parseFloat(item.Price) * item.quantity;
-    return { ...item, totalPrice };
-  });
-
-  console.log(multipliedData);
+  /* popup & snackbar */
+  const [openPopup, setPopup] = useState(false);
+  const [openSnack, setSnack] = useState(false);
 
   return (
-    <Container>
-      <Wrapper>
-        <Title>TABLE({getdata.length})</Title>
-        <Top>
+    <Wrap>
+      {/* ─── header ─── */}
+      <Header>
+        <Title>BOQ Table ({items.length})</Title>
+
+        <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}>
           <Link to="/">
-            <TopButton>ADD MORE</TopButton>
+            <OutlineButton>Add More</OutlineButton>
           </Link>
 
-          <TopButtonDiv>
-            <TopButton type="filled" onClick={handleToggle}>
-              {" "}
-              ADD TO GROUP{" "}
-            </TopButton>
+          <PrimaryButton onClick={() => setPopup(true)}>
+            Add to Group
+          </PrimaryButton>
 
-            <TopButton
-              type="filled"
-              onClick={() => {
-                reset();
-              }}
-            >
-              {" "}
-              CLEAR CART{" "}
-            </TopButton>
-          </TopButtonDiv>
-        </Top>
+          <PrimaryButton onClick={() => dispatch(RESET())}>
+            Clear Cart
+          </PrimaryButton>
+        </div>
+      </Header>
 
-        <Backdrop
-          sx={{ color: "#fff", zIndex: (theme) => theme.zIndex.drawer + 1 }}
-          open={open}
-        >
-          <Paper
-            sx={{
-              width: "25%",
-              height: "38%",
-              alignItems: "center",
-              padding: "5vh",
-              paddingTop: "2vh",
-              textAlign: "center",
-              overflowY: "auto",
-              "&::-webkit-scrollbar": {
-                width: "0.5em",
-              },
-              "&::-webkit-scrollbar-track": {
-                boxShadow: "inset 0 0 6px rgba(0,0,0,0.00)",
-                webkitBoxShadow: "inset 0 0 6px rgba(0,0,0,0.00)",
-              },
-              "&::-webkit-scrollbar-thumb": {
-                backgroundColor: "#ff8e038d",
-                outline: "1px solid slategrey",
-              },
-            }}
+      {/* ─── main ─── */}
+      <Body>
+        <Info>
+          <CartTab />
+        </Info>
+
+        <Summary>
+          <SumHead>Order Summary</SumHead>
+
+          <Row>
+            <span>Subtotal</span>
+            <span>₹ {Math.ceil(subtotal).toLocaleString()}</span>
+          </Row>
+
+          <Row>
+            <span>Quotes Required</span>
+            <span>{quotesNeeded}</span>
+          </Row>
+
+          <Row total>
+            <span>Total</span>
+            <span>
+              ₹ {Math.ceil(subtotal).toLocaleString()}
+              {quotesNeeded > 0 &&
+                ` + ${quotesNeeded} pending quotation${
+                  quotesNeeded > 1 ? "s" : ""
+                }`}
+            </span>
+          </Row>
+
+          {/* ---- actions ---- */}
+          <PrimaryButton
+            style={{ width: "100%", marginTop: "2vh" }}
+            onClick={() => exportDataToExcel(items, "BOQ.xlsx")}
           >
-            <Wrapper2>
-              <IconButton
-                onClick={handleClose}
-                sx={{
-                  marginRight: "0",
-                  marginLeft: "auto",
-                  transition: "transform 0.5s",
-                  "&:hover": { transform: "rotate(90deg)", transition: "0.5s" },
-                }}
-              >
-                <Close />
-              </IconButton>
-            </Wrapper2>
+            Export to Excel
+          </PrimaryButton>
 
-            <Send handleClose={handleClose} handleToggleSB={handleToggleSB} />
-            <Snackbar
-              open={openSnackBar}
-              autoHideDuration={20000}
-              onClose={handleCloseSB}
-            >
-              <Alert
-                onClose={handleCloseSB}
-                severity="success"
-                sx={{ width: "100%" }}
-              >
-                Products have been added to a group
-              </Alert>
-            </Snackbar>
-          </Paper>
-        </Backdrop>
+          <OutlineButton
+            style={{ width: "100%", marginTop: "1vh" }}
+            onClick={() => alert("Download Quotations coming soon!")}
+          >
+            Download Quotations
+          </OutlineButton>
+        </Summary>
+      </Body>
 
-        <Bottom>
-          <Info>
-            <CartTab qua={qua} setqua={setQua} />
-          </Info>
-          <Summary>
-            <SummaryTitle>ORDER SUMMARY</SummaryTitle>
+      {/* ─── popup (add‑to‑group) ─── */}
+      <Backdrop open={openPopup} sx={{ zIndex: (t) => t.zIndex.drawer + 1 }}>
+        <Paper sx={popSX}>
+          <CloseBtn onClick={() => setPopup(false)}>
+            <Close />
+          </CloseBtn>
 
-            <SummaryItem type="total">
-              <SummaryItemText>Total</SummaryItemText>
-              <SummaryItemPrice>₹ {Math.ceil(price)}</SummaryItemPrice>
-            </SummaryItem>
+          <Send
+            handleClose={() => setPopup(false)}
+            handleToggleSB={() => setSnack(true)}
+          />
+        </Paper>
+      </Backdrop>
 
-            <Button onClick={handleExport}> EXPORT </Button>
-          </Summary>
-        </Bottom>
-
-        <Infocont>
-          <Info>
-            <Button type="filled" onClick={handleExport}>
-              {" "}
-              EXPORT{" "}
-            </Button>
-          </Info>
-        </Infocont>
-      </Wrapper>
-    </Container>
+      {/* ─── snackbar ─── */}
+      <Snackbar
+        open={openSnack}
+        autoHideDuration={3000}
+        onClose={() => setSnack(false)}
+        anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+      >
+        <Alert
+          severity="success"
+          variant="filled"
+          sx={{ background: primary, color: accent }}
+        >
+          Products added to the group
+        </Alert>
+      </Snackbar>
+    </Wrap>
   );
 };
 

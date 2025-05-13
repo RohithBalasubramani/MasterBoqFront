@@ -7,8 +7,7 @@ import { ADD } from "../Redux/actions/action";
 import axios from "axios";
 import { Snackbar, Alert } from "@mui/material";
 
-/* ───────────── styled components ───────────── */
-
+/* ─── styled components (unchanged) ─────────────────────────────────────── */
 const Container = styled.div`
   padding: 2vh;
   width: 95%;
@@ -113,38 +112,43 @@ const ToggleAuxButton = styled.button`
   }
 `;
 
-/* ───────────── helpers ───────────── */
-
-const displayPrice = (price) =>
-  isNaN(parseFloat(price)) || price === null || price === ""
-    ? "Request Market Price"
-    : `Rs. ${price}`;
-
-/* ───────────── component ───────────── */
-
-const ProductCard = ({ Prod, HeadName }) => {
-  /* hooks must run every render (so they are first) */
+/* ─── component ─────────────────────────────────────────────────────────── */
+const ProductCard = ({ Key, Prod, HeadName }) => {
   const dispatch = useDispatch();
 
+  /* state */
   const [showAuxiliaries, setShowAuxiliaries] = useState(false);
-  const [auxiliaries, setAuxiliaries] = useState([]);
-  const [filteredAuxiliaries, setFilteredAuxiliaries] = useState([]);
+  const [auxiliaries, setAuxiliaries] = useState([]); // full fetched list
+  const [filteredAuxiliaries, setFilteredAuxiliaries] = useState([]); // after matching
   const [loading, setLoading] = useState(false);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
 
-  /* fetch once only when needed */
+  /* helper: add to cart + toast */
+  const addToBoq = (item) => {
+    dispatch(ADD(item));
+    setSnackbarMessage(`${item.ProductName} has been added to your BOQ Table`);
+    setSnackbarOpen(true);
+  };
+
+  /* compose product with extra keys for cart */
+  const prodWithKey = { ...Prod, Heading: HeadName, quantity: 1 };
+
+  /* ── fetch auxiliaries safely ────────────────────────────────────────── */
   const fetchAuxiliaries = async () => {
     setLoading(true);
     try {
       const { data } = await axios.get(
         "https://www.boqmasteradmin.com/auxiliaries/"
       );
+      // API may return an array OR { results: [...] }
       const list = Array.isArray(data)
         ? data
         : Array.isArray(data.results)
         ? data.results
         : [];
+
+      console.log("[ProductCard] fetched auxiliaries:", list.length);
       setAuxiliaries(list);
     } catch (err) {
       console.error("[ProductCard] fetchAuxiliaries error:", err);
@@ -154,44 +158,50 @@ const ProductCard = ({ Prod, HeadName }) => {
     }
   };
 
-  /* filter whenever list OR Prod changes */
-  useEffect(() => {
-    if (!Prod) return; // Prod may be undefined on very first render
-    const prodCat8 = (Prod.SubCategory8 || "").trim().toLowerCase();
-    const prodCat4 = (Prod.SubCategory4 || "").trim().toLowerCase();
+  /* ── match logic ───────────────────────────────────────────────────────
+   *  - SubCategory4 of auxiliary (csv) vs product.SubCategory8
+   *  - SubCategory3 of auxiliary (csv) vs product.SubCategory4
+   *  - Case‑insensitive
+   *  - If both prod fields present → require both matches
+   *  - If only one present → require that one
+   */
+  const filterAuxiliaries = (list, product) => {
+    if (!Array.isArray(list)) {
+      console.error("[ProductCard] filterAuxiliaries got non‑array:", list);
+      return [];
+    }
 
-    const matches = auxiliaries.filter((aux) => {
+    const prodCat8 = (product.SubCategory8 || "").trim().toLowerCase();
+    const prodCat4 = (product.SubCategory4 || "").trim().toLowerCase();
+
+    return list.filter((aux) => {
       const auxCat4Arr = (aux.SubCategory4 || "")
         .split(",")
         .map((s) => s.trim().toLowerCase())
         .filter(Boolean);
+
       const auxCat3Arr = (aux.SubCategory3 || "")
         .split(",")
         .map((s) => s.trim().toLowerCase())
         .filter(Boolean);
 
-      if (prodCat8 && prodCat4)
+      /* evaluate rules */
+      if (prodCat8 && prodCat4) {
         return auxCat4Arr.includes(prodCat8) && auxCat3Arr.includes(prodCat4);
+      }
       if (prodCat8) return auxCat4Arr.includes(prodCat8);
       if (prodCat4) return auxCat3Arr.includes(prodCat4);
       return false;
     });
-
-    setFilteredAuxiliaries(matches);
-  }, [auxiliaries, Prod]);
-
-  /* add to cart */
-  const addToBoq = (item) => {
-    dispatch(ADD(item));
-    setSnackbarMessage(`${item.ProductName} has been added to your BOQ Table`);
-    setSnackbarOpen(true);
   };
 
-  /* handlers */
-  const prodWithKey = Prod ? { ...Prod, Heading: HeadName, quantity: 1 } : null;
+  /* re‑filter whenever aux list or product changes */
+  useEffect(() => {
+    setFilteredAuxiliaries(filterAuxiliaries(auxiliaries, Prod));
+  }, [auxiliaries, Prod]);
 
+  /* ── handlers ───────────────────────────────────────────────────────── */
   const handleAddClick = async () => {
-    if (!Prod) return;
     addToBoq(prodWithKey);
     if (!auxiliaries.length) await fetchAuxiliaries();
     setShowAuxiliaries(true);
@@ -202,27 +212,22 @@ const ProductCard = ({ Prod, HeadName }) => {
     setShowAuxiliaries((prev) => !prev);
   };
 
-  /* early bail AFTER hooks to satisfy ESLint */
-  if (!Prod) return null;
-
-  /* ───────────── render ───────────── */
+  /* ── render ─────────────────────────────────────────────────────────── */
   return (
     <div>
-      {/* main product row */}
+      {/* main product bar */}
       <Container>
         <Box onClick={handleAddClick}>
           <Add />
         </Box>
-
         <Title>{Prod.ProductName}</Title>
-        <Price>{displayPrice(Prod.Price)}</Price>
-
+        <Price>(Rs. {Prod.Price})</Price>
         <ToggleAuxButton onClick={handleToggleAuxClick}>
           {showAuxiliaries ? "Hide Auxiliaries" : "Show Auxiliaries"}
         </ToggleAuxButton>
       </Container>
 
-      {/* auxiliaries list */}
+      {/* auxiliaries section */}
       {showAuxiliaries && (
         <div>
           {loading && <LoadingMessage>Loading auxiliaries…</LoadingMessage>}
@@ -232,7 +237,6 @@ const ProductCard = ({ Prod, HeadName }) => {
               <AuxiliaryTitle>
                 Auxiliaries for {Prod.ProductName}:
               </AuxiliaryTitle>
-
               <AuxiliaryList>
                 {filteredAuxiliaries.map((aux) => (
                   <AuxBox key={aux.id}>
@@ -240,7 +244,7 @@ const ProductCard = ({ Prod, HeadName }) => {
                       <Add />
                     </Box>
                     <Title>{aux.ProductName}</Title>
-                    <Price>{displayPrice(aux.Price)}</Price>
+                    <Price>(Rs. {aux.Price})</Price>
                   </AuxBox>
                 ))}
               </AuxiliaryList>

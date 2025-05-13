@@ -4,160 +4,157 @@ import React, { useEffect, useState } from "react";
 import styled from "styled-components";
 import FilterCheckBox from "./FilterCheckBox";
 
+/* ──────────────── layout helpers ──────────────── */
+
 const FilterFlex = styled.div`
   display: flex;
   width: 100%;
+  gap: 2rem;
 `;
-const FilterOne = styled.div`
+
+const LeftColumn = styled.div`
   flex: 1;
+  display: flex;
+  flex-direction: column;
 `;
+
+const TopGroup = styled.div``;
+const BottomGroup = styled.div`
+  margin-top: 0; /* pushes Sub‑Cat‑3 to bottom */
+`;
+
+const RightColumn = styled.div`
+  border: 1px solid #e0e0e0;
+  padding: 2vh;
+  padding-top: 0%;
+  flex: 1.6;
+`;
+
+/* two‑column grid for Sub‑Cat‑2 checkboxes */
+const TwoColGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  row-gap: 0.4rem;
+  column-gap: 0.5rem;
+`;
+
 const FilterHead = styled.div`
   font-family: Lexend;
   font-size: 16px;
   font-weight: 500;
   line-height: 20px;
   letter-spacing: 0.045em;
-  text-align: left;
   text-transform: uppercase;
-  padding-top: 3vh;
-  padding-bottom: 2vh;
-  margin-top: 2vh;
+  margin: 1rem 0 0.5rem;
 `;
 
 const PriceWrap = styled.div`
   border-top: 1px solid #e0e0e0;
   border-bottom: 1px solid #e0e0e0;
-  margin-top: 2vh;
-  margin-bottom: 2vh;
-  padding-bottom: 4vh;
-  padding-top: 5vh;
+  margin: 2vh 0;
+  padding: 5vh 0 4vh;
   display: flex;
 `;
+
+/* ───────────────── component ─────────────────── */
 
 const Filter = (props) => {
   const [brands, setBrands] = useState({});
   const [subCategories, setSubCategories] = useState({});
   const [subCategory1, setSubCategory1] = useState({});
   const [subCategory2, setSubCategory2] = useState({});
-  const [subCategory3, setSubCategory3] = useState([]);
 
+  /* fetch meta data once */
   useEffect(() => {
     axios
       .get("https://www.boqmasteradmin.com/product/get_meta_data")
-      .then((response) => {
-        console.log(response);
-        setBrands(response.data.Brands);
-        setSubCategories(response.data.subCategories);
-        setSubCategory1(response.data.subCategories1);
-        setSubCategory2(response.data.subCategories2);
-        // setSubCategory3(response.data.subCategories3);
+      .then(({ data }) => {
+        setBrands(data.Brands);
+        setSubCategories(data.subCategories);
+        setSubCategory1(data.subCategories1);
+        setSubCategory2(data.subCategories2);
       })
-      .catch((error) => {
-        console.log(error);
-      });
+      .catch(console.error);
   }, []);
 
+  /* cascading clear */
   useEffect(() => {
-    if(props.selectedSubCategory1.length == 0){
-      props.setSelectedSubCategory2([])
-      props.setSelectedSubCategory3([])
+    if (props.selectedSubCategory1.length === 0) {
+      props.setSelectedSubCategory2([]);
+      props.setSelectedSubCategory3([]);
     }
-    if(props.selectedSubCategory2.length == 0){
-      props.setSelectedSubCategory3([])
+    if (props.selectedSubCategory2.length === 0) {
+      props.setSelectedSubCategory3([]);
     }
-  },[props.selectedSubCategory1, props.selectedSubCategory2])
+  }, [props.selectedSubCategory1, props.selectedSubCategory2]);
 
   return (
     <div>
+      {/* ── Brand & primary Sub‑Cat selectors ───────────── */}
       <PriceWrap>
         <Autocomplete
           disablePortal
           value={props.selectedBrand}
-          onChange={(event, newValueAuto) => {
-            //setValueAuto(newValueAuto);
-            props.setSelectedBrand(newValueAuto);
+          id="brand-autocomplete"
+          options={Object.keys(brands)}
+          sx={{ width: 300 }}
+          onChange={(_, val) => {
+            props.setSelectedBrand(val);
             props.setSelectedCategory(null);
             props.setSelectedSubCategory1([]);
             props.setSelectedSubCategory2([]);
             props.setSelectedSubCategory3([]);
-            console.log(newValueAuto);
           }}
-          id="combo-box-demo"
-          options={Object.keys(brands)}
-          sx={{ width: 300 }}
-          // inputValue={inputValue}
-          // onInputChange={(event, newInputValue) => {
-          //   setInputValue(newInputValue);
-          //   setSelectedBrands(newInputValue);
-          // }}
-          // onChange={(event) => handleBrandCheckboxChange(event)}
-          renderInput={(params) => <TextField {...params} label="Brand" />}
+          renderInput={(p) => <TextField {...p} label="Brand" />}
         />
+
         {props.selectedBrand && (
           <Autocomplete
             disablePortal
             value={props.selectedCategory}
-            onChange={(event, newValueAuto) => {
-              //setValueAuto(newValueAuto);
-              props.setSelectedCategory(newValueAuto);
+            id="subcat-autocomplete"
+            options={brands[props.selectedBrand]}
+            sx={{ width: 300, marginLeft: "1rem" }}
+            onChange={(_, val) => {
+              props.setSelectedCategory(val);
               props.setSelectedSubCategory1([]);
               props.setSelectedSubCategory2([]);
               props.setSelectedSubCategory3([]);
-              console.log(newValueAuto);
             }}
-            id="combo-box-demo"
-            options={brands[props.selectedBrand]}
-            sx={{ width: 300 }}
-            // inputValue={inputValue}
-            // onInputChange={(event, newInputValue) => {
-            //   setInputValue(newInputValue);
-            //   setSelectedBrands(newInputValue);
-            // }}
-            // onChange={(event) => handleBrandCheckboxChange(event)}
-            renderInput={(params) => <TextField {...params} label="Sub-Cat" />}
+            renderInput={(p) => <TextField {...p} label="Sub‑Cat" />}
           />
         )}
       </PriceWrap>
+
+      {/* ── Three‑level subcategory filters ─────────────── */}
       <FilterFlex>
-        <FilterOne>
-          <div>
+        {/* LEFT column: Sub‑Cat‑1 (top) & Sub‑Cat‑3 (bottom) */}
+        <LeftColumn>
+          <TopGroup>
             {props.selectedCategory && (
               <>
-                <FilterHead> Sub Cat 1 </FilterHead>
-                {subCategories[props.selectedCategory]?.map((subCat1) => (
+                <FilterHead>Sub Cat 1</FilterHead>
+                {subCategories[props.selectedCategory]?.map((sc1) => (
                   <FilterCheckBox
-                    value={subCat1}
+                    key={sc1}
+                    value={sc1}
                     setCheckBoxValue={props.setSelectedSubCategory1}
                     selectedValues={props.selectedSubCategory1}
                   />
                 ))}
               </>
             )}
-          </div>
-          <div>
-            {props.selectedSubCategory1.length > 0 && (
-              <>
-                <FilterHead> Sub Cat 2 </FilterHead>
-                {props.selectedSubCategory1.map((sc1) =>
-                  subCategory1[sc1]?.map((subCat2) => (
-                    <FilterCheckBox
-                      value={subCat2}
-                      setCheckBoxValue={props.setSelectedSubCategory2}
-                      selectedValues={props.selectedSubCategory2}
-                    />
-                  ))
-                )}
-              </>
-            )}
-          </div>
-          <div>
+          </TopGroup>
+
+          <BottomGroup>
             {props.selectedSubCategory2.length > 0 && (
               <>
-                <FilterHead> Sub Cat 3</FilterHead>
-                {props.selectedSubCategory2.map((sc2) =>
-                  subCategory2[sc2]?.map((subCat3) => (
+                <FilterHead>Sub Cat 3</FilterHead>
+                {props.selectedSubCategory2.flatMap((sc2) =>
+                  subCategory2[sc2]?.map((sc3) => (
                     <FilterCheckBox
-                      value={subCat3}
+                      key={sc3}
+                      value={sc3}
                       setCheckBoxValue={props.setSelectedSubCategory3}
                       selectedValues={props.selectedSubCategory3}
                     />
@@ -165,8 +162,29 @@ const Filter = (props) => {
                 )}
               </>
             )}
-          </div>
-        </FilterOne>
+          </BottomGroup>
+        </LeftColumn>
+
+        {/* RIGHT column: Sub‑Cat‑2 rendered in TWO columns */}
+        <RightColumn>
+          {props.selectedSubCategory1.length > 0 && (
+            <>
+              <FilterHead>Sub Cat 2</FilterHead>
+              <TwoColGrid>
+                {props.selectedSubCategory1.flatMap((sc1) =>
+                  subCategory1[sc1]?.map((sc2) => (
+                    <FilterCheckBox
+                      key={sc2}
+                      value={sc2}
+                      setCheckBoxValue={props.setSelectedSubCategory2}
+                      selectedValues={props.selectedSubCategory2}
+                    />
+                  ))
+                )}
+              </TwoColGrid>
+            </>
+          )}
+        </RightColumn>
       </FilterFlex>
     </div>
   );

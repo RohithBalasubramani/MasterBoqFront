@@ -1,375 +1,214 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import styled from "styled-components";
 import {
   IconButton,
   Table,
-  TableRow,
-  TableCell,
   TableBody,
+  TableCell,
   TableHead,
+  TableRow,
 } from "@mui/material";
-import cartgif from "../../Assets/cart.gif";
-
 import { ReactComponent as DeleteIcon } from "../../Assets/DeleteIcon.svg";
 import { DLT, REMOVE, ADDMORE } from "../../Redux/actions/action";
+import cartgif from "../../Assets/cart.gif";
 
-const Container = styled.div`
-  margin: 3px;
-  height: auto;
+/* palette */
+const primary = "#09193D";
+const accent = "#FFF700";
+
+/* ───────── shared buttons (re‑exported for CartTab2) ───────── */
+export const PrimaryButton = styled.button`
+  background: ${primary};
+  color: ${accent};
+  border: none;
+  border-radius: 6px;
+  padding: 0.6rem 1.4rem;
+  font-family: inherit;
+  font-weight: 500;
+  cursor: pointer;
+  height: min-content;
+`;
+export const OutlineButton = styled.button`
+  background: transparent;
+  color: ${primary};
+  border: 2px solid ${primary};
+  border-radius: 6px;
+  padding: 0.6rem 1.4rem;
+  height: min-content;
+  font-family: inherit;
+  font-weight: 500;
+  cursor: pointer;
+  &:hover {
+    background: ${primary};
+    color: ${accent};
+  }
+`;
+
+/* ───────── wrapper card ───────── */
+const Wrapper = styled.div`
   width: 100%;
-  background: #ffffff;
+  background: #fff;
   border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  overflow-x: auto;
 `;
 
-const ProdName = styled.div`
-  font-family: Lexend;
-  font-size: 20px;
-  font-weight: 500;
-  line-height: 25px;
-  letter-spacing: 0em;
-  text-align: left;
-  padding-top: 2vh;
-  padding-bottom: 2vh;
-`;
-
-const Refno = styled.div`
-  font-family: Lexend;
-  font-size: 17px;
-  font-weight: 500;
-  line-height: 28px;
-  letter-spacing: 0em;
-  text-align: left;
-  color: #535353;
-`;
-
-const ProdPrice = styled.div`
-  font-family: Lexend;
-  font-size: 16px;
-  font-weight: 500;
-  width: max-content;
-  line-height: 28px;
-  letter-spacing: 0em;
-  text-align: right;
-  color: #333333;
+/* ───────── quantity controls ───────── */
+const QtyWrap = styled.div`
   display: flex;
-  background-color: #ffffff;
+  align-items: center;
 `;
-
-const Price = styled.div`
-  font-family: Lexend;
-  font-size: 16px;
-  font-weight: 700;
-  line-height: 28px;
-  letter-spacing: 0em;
-  text-align: right;
-  color: #00337c;
-`;
-
-const Quant = styled.div`
-  display: flex;
-  outline-color: black;
-  width: 10vw;
-`;
-
-const QuantVal = styled.div`
-  width: 40%;
-  border-top: 1px solid grey;
-  border-bottom: 1px solid grey;
-  text-align: center;
-  vertical-align: middle;
-  padding-top: 5%;
-`;
-
-const ValueButtonDecrease = styled.button`
-  display: inline-block;
+const QtyBtn = styled.button`
+  width: 34px;
+  height: 34px;
   border: 1px solid #ddd;
-  margin: 0px;
-  width: 40px;
-  height: 40px;
-  text-align: center;
-  vertical-align: middle;
-  padding: 11px 0;
   background: #eee;
-  -webkit-touch-callout: none;
-  -webkit-user-select: none;
-  -khtml-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
-  user-select: none;
-  margin-right: -4px;
-  border-radius: 8px 0 0 8px;
-
-  &:hover {
-    cursor: pointer;
+  font-size: 1.25rem;
+  line-height: 1;
+  color: ${primary};
+  cursor: pointer;
+  &:first-child {
+    border-radius: 8px 0 0 8px;
+  }
+  &:last-child {
+    border-radius: 0 8px 8px 0;
   }
 `;
-
-const ValueButtonIncrease = styled.button`
-  display: inline-block;
-  border: 1px solid #ddd;
-  margin: 0px;
-  width: 40px;
-  height: 40px;
-  text-align: center;
-  vertical-align: middle;
-  padding: 11px 0;
-  background: #eee;
-  -webkit-touch-callout: none;
-  -webkit-user-select: none;
-  -khtml-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
-  user-select: none;
-  margin-left: -4px;
-  border-radius: 0 8px 8px 0;
-
-  &:hover {
-    cursor: pointer;
-  }
+const QtyVal = styled.div`
+  padding: 0 0.8rem;
+  border-top: 1px solid #ddd;
+  border-bottom: 1px solid #ddd;
+  font-family: Lexend;
 `;
 
+/* ───────── helpers ───────── */
+const fmt = (n) => `₹ ${Math.ceil(n).toLocaleString()}`;
+const isNum = (x) => !isNaN(parseFloat(x));
+
+/* ───────── component ───────── */
 const CartTab = () => {
-  const [price, setPrice] = useState(0);
-  const [qua, setQua] = useState(1);
-
-  // console.log(price);
-
-  const getdata = useSelector((state) => state.cartreducer.carts);
-  // console.log(getdata);
-  const [data, setdata] = useState(getdata);
-  console.log("table data", data);
-
+  const items = useSelector((s) => s.cartreducer.carts);
   const dispatch = useDispatch();
-
-  const [anchorEl, setAnchorEl] = useState(null);
-  const open = Boolean(anchorEl);
-  const handleClick = (event) => {
-    setAnchorEl(event.currentTarget);
-  };
-  const handleClose = () => {
-    setAnchorEl(null);
-  };
-
-  const dlt = (id) => {
-    dispatch(DLT(id));
-  };
-
-  const add = (id) => {
-    dispatch(ADDMORE(id));
-  };
-
-  const rmv = (id) => {
-    dispatch(REMOVE(id));
-  };
-
-  // const addone
-
-  const total = () => {
-    let price = 0;
-    getdata.map((ele, k) => {
-      price = ele.price * ele.qnty + price;
-    });
-    setPrice(price);
-  };
-
-  useEffect(() => {
-    total();
-  }, [total]);
-
-  useEffect(() => {}, [qua]);
-
-  localStorage.setItem("carts", JSON.stringify(data));
+  const [, force] = useState(0); // simple rerender trick
 
   return (
-    <div>
-      <Container>
-        {getdata.length ? (
-          <div
-            className="card_details"
-            style={{ width: "auto", borderRadius: "8px" }}
-          >
-            <Table sx={{ border: "2px solid grey", borderRadius: "8px" }}>
-              <TableHead
-                sx={{
-                  fontWeight: "600",
-                  fontSize: "18px",
-                  border: "2px solid grey",
-                  backgroundColor: "#ff714a",
-                }}
-              >
-                <TableRow>
-                  <TableCell
-                    align="Left"
-                    sx={{ fontWeight: "600", fontSize: "18px" }}
-                  >
-                    Heading
-                  </TableCell>
-                  <TableCell
-                    sx={{ width: "25vw", fontWeight: "600", fontSize: "18px" }}
-                  >
-                    Product Name
-                  </TableCell>
-                  {/* <TableCell sx={{fontWeight:"600",fontSize:"18px"}}  align="Left">Model Number</TableCell>
-                            <TableCell sx={{fontWeight:"600",fontSize:"18px"}}  align="Left">Category</TableCell>
+    <Wrapper>
+      {items.length ? (
+        <Table sx={{ minWidth: 720 }}>
+          <TableHead>
+            <TableRow sx={{ background: primary }}>
+              {[
+                "Heading",
+                "Product",
+                "Brand",
+                "Model",
+                "Category",
+                "Unit Price",
+                "Qty",
+                "Total",
+                "Remove",
+              ].map((h) => (
+                <TableCell key={h} sx={{ color: accent, fontWeight: 600 }}>
+                  {h}
+                </TableCell>
+              ))}
+            </TableRow>
+          </TableHead>
 
-                            <TableCell align="Left"sx={{fontWeight:"600",fontSize:"18px"}}>Cat1</TableCell>
-                            <TableCell align="Left"sx={{ fontWeight:"600",fontSize:"18px"}}>Cat2</TableCell>
-                            <TableCell align="Left"sx={{ fontWeight:"600",fontSize:"18px"}}>Cat3</TableCell>
-                            <TableCell align="Left"sx={{ fontWeight:"600",fontSize:"18px"}}>Cat4</TableCell> */}
+          <TableBody>
+            {items.map((row) => {
+              /* auto‑delete rows with qty < 1 */
+              if (row.quantity < 1) {
+                dispatch(DLT(row.id));
+                return null;
+              }
 
-                  <TableCell
-                    align="Left"
-                    sx={{ fontWeight: "600", fontSize: "18px" }}
-                  >
-                    Brand
+              /* pricing logic */
+              const unitNum = parseFloat(row.Price);
+              const unitTxt = isNum(row.Price)
+                ? fmt(unitNum)
+                : "Request Market price";
+              const totalTxt = isNum(row.Price)
+                ? fmt(unitNum * row.quantity)
+                : "--";
+
+              return (
+                <TableRow key={row.id}>
+                  <TableCell>{row.Heading}</TableCell>
+                  <TableCell sx={{ maxWidth: 260 }}>
+                    {row.ProductName}
                   </TableCell>
-                  <TableCell
-                    align="Left"
-                    sx={{ fontWeight: "600", fontSize: "18px" }}
-                  >
-                    Model Number
-                  </TableCell>
-                  <TableCell
-                    align="Left"
-                    sx={{ fontWeight: "600", fontSize: "18px" }}
-                  >
-                    Category
-                  </TableCell>
-                  {/* <TableCell align="Left"sx={{fontWeight:"600",fontSize:"18px"}}>Industry</TableCell> */}
-                  <TableCell
-                    align="Left"
-                    sx={{ fontWeight: "600", fontSize: "18px" }}
-                  >
-                    Price
-                  </TableCell>
+                  <TableCell>{row.Brand}</TableCell>
+                  <TableCell>{row.ModelNumber}</TableCell>
+                  <TableCell>{row.SubCategory}</TableCell>
 
                   <TableCell
-                    align="Left"
-                    sx={{ fontWeight: "600", fontSize: "18px" }}
+                    sx={{
+                      whiteSpace: "nowrap",
+                      color: primary,
+                      fontWeight: 600,
+                    }}
                   >
-                    Quantity
+                    {unitTxt}
+                  </TableCell>
+
+                  <TableCell>
+                    <QtyWrap>
+                      {/* – button */}
+                      <QtyBtn
+                        onClick={() => {
+                          if (row.quantity > 1) {
+                            dispatch(REMOVE(row.id));
+                          } else {
+                            /* reduce from 1 → 0 ⇒ delete */
+                            dispatch(DLT(row.id));
+                          }
+                          force((t) => t + 1);
+                        }}
+                      >
+                        –
+                      </QtyBtn>
+
+                      <QtyVal>{row.quantity}</QtyVal>
+
+                      {/* + button */}
+                      <QtyBtn
+                        onClick={() => {
+                          dispatch(ADDMORE(row.id));
+                          force((t) => t + 1);
+                        }}
+                      >
+                        +
+                      </QtyBtn>
+                    </QtyWrap>
                   </TableCell>
 
                   <TableCell
-                    sx={{ fontWeight: "600", fontSize: "18px" }}
                     align="right"
+                    sx={{ color: primary, fontWeight: 600 }}
                   >
-                    Total Price
+                    {totalTxt}
                   </TableCell>
 
-                  <TableCell
-                    sx={{ fontWeight: "600", fontSize: "18px" }}
-                    align="Left"
-                  >
-                    Delete
+                  <TableCell>
+                    <IconButton onClick={() => dispatch(DLT(row.id))}>
+                      <DeleteIcon style={{ fill: "red", width: 22 }} />
+                    </IconButton>
                   </TableCell>
                 </TableRow>
-              </TableHead>
-
-              <TableBody>
-                {data.map((row, index) => (
-                  <TableRow
-                    key={row.id || index} // Use row.id if it's unique, fallback to index if necessary.
-                    sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
-                  >
-                    <TableCell align="left">
-                      <Refno>{row.Heading}</Refno>
-                    </TableCell>
-                    <TableCell component="th" scope="row">
-                      <ProdName>{row.ProductName}</ProdName>
-                    </TableCell>
-                    <TableCell align="left">
-                      <Refno>{row.Brand}</Refno>
-                    </TableCell>
-                    <TableCell align="left">
-                      <Refno>{row.ModelNumber}</Refno>
-                    </TableCell>
-                    <TableCell align="left">
-                      <Refno>{row.SubCategory}</Refno>
-                    </TableCell>
-                    <TableCell align="left">
-                      <ProdPrice>
-                        <Price>₹ {row.Price}</Price>
-                      </ProdPrice>
-                    </TableCell>
-                    <TableCell align="right">
-                      <Quant>
-                        <ValueButtonDecrease
-                          onClick={() => {
-                            row.quantity = row.quantity - 1;
-                            setQua(row.quantity);
-                          }}
-                        >
-                          -
-                        </ValueButtonDecrease>
-                        <QuantVal>{row.quantity}</QuantVal>
-                        <ValueButtonIncrease
-                          onClick={() => {
-                            row.quantity = row.quantity + 1;
-                            setQua(row.quantity);
-                          }}
-                        >
-                          +
-                        </ValueButtonIncrease>
-                      </Quant>
-                    </TableCell>
-                    <TableCell align="right">
-                      <ProdPrice>
-                        <Price>₹ {Math.ceil(row.Price * row.quantity)}</Price>
-                      </ProdPrice>
-                    </TableCell>
-                    <TableCell align="left">
-                      <IconButton
-                        sx={{
-                          color: "red",
-                          fontSize: 20,
-                          cursor: "pointer",
-                          marginTop: "0%",
-                          marginBottom: "55%",
-                        }}
-                        onClick={() => dlt(row.id)}
-                      >
-                        <DeleteIcon />
-                      </IconButton>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        ) : (
-          <div
-            className="card_details d-flex justify-content-center align-items-center"
-            style={{
-              width: "90vw",
-              padding: 10,
-              position: "relative",
-              fontFamily: "Lexend",
-            }}
-          >
-            <i
-              className="fas fa-close smallclose"
-              onClick={handleClose}
-              style={{
-                position: "absolute",
-                top: 2,
-                right: 20,
-                fontSize: 23,
-                cursor: "pointer",
-              }}
-            ></i>
-            <p style={{ fontSize: 22 }}>Your table is empty</p>
-            <img
-              src={cartgif}
-              alt=""
-              className="emptycart_img"
-              style={{ width: "5rem", padding: 10 }}
-            />
-          </div>
-        )}
-      </Container>
-    </div>
+              );
+            })}
+          </TableBody>
+        </Table>
+      ) : (
+        /* empty‑state */
+        <div style={{ textAlign: "center", padding: "4vh 0" }}>
+          <p style={{ fontSize: 22, color: primary }}>Your table is empty</p>
+          <img src={cartgif} alt="" style={{ width: 90 }} />
+        </div>
+      )}
+    </Wrapper>
   );
 };
 
