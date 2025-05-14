@@ -25,6 +25,7 @@ import ProductCard from "../Components/ProductCard";
 import SearchAppBar from "../Components/StyledSearch";
 import Filter from "../Components/Filters/Filter";
 import FloatingSubCatFilter from "../Components/FloatingSubcatfilter";
+import { motion, AnimatePresence } from "framer-motion";
 
 /* ───────────────────────  constants  ─────────────────────── */
 
@@ -49,7 +50,7 @@ const HeadCon = styled.div`
 `;
 const SearchCon = styled.div`
   margin-left: 5%;
-  width: 65%;
+  width: 60%;
   display: flex;
   height: 7vh;
   background-color: ${(p) => p.bg};
@@ -135,6 +136,15 @@ const WrapperTit = styled.div`
 const WrapperFlex = styled.div`
   display: flex;
   width: 100%;
+`;
+
+const CardGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+  padding: 2vh;
+  height: 80vh;
+  overflow-y: auto;
 `;
 const WrapperNum = styled.div`
   font-family: Lexend, sans-serif;
@@ -375,10 +385,13 @@ export default function ProductListing() {
             search={searchQuery}
             onchange={handleSearchQueryChange}
           />
+          <OutlineButton
+            onClick={handleSearch}
+            sx={{ ml: 1, color: "#fff700" }}
+          >
+            Search
+          </OutlineButton>
         </SearchCon>
-        <Button onClick={handleSearch} sx={{ ml: 1, color: "#fff700" }}>
-          Search
-        </Button>
 
         <CartCont>
           <IconButton component={Link} to="/table" sx={{ color: "white" }}>

@@ -1,6 +1,4 @@
-/*  src/Components/FloatingSubCatFilter.jsx
-    – shows a bottom-right FAB **only when the user has picked
-      every required top-level filter** (brand + sub-cats 1-3).      */
+// src/Components/FloatingSubCatFilter.jsx
 
 import React, { useEffect, useMemo, useState } from "react";
 import styled from "styled-components";
@@ -14,6 +12,7 @@ import {
 } from "@mui/material";
 import FilterListIcon from "@mui/icons-material/FilterList";
 import CloseIcon from "@mui/icons-material/Close";
+import { motion, AnimatePresence } from "framer-motion";
 
 /* ───────────────────────── styled bits ────────────────────────── */
 
@@ -25,6 +24,8 @@ const StickyFab = styled(Fab)`
   background: #09193d !important;
   color: #fff700 !important;
 `;
+
+const MotionFab = motion(StickyFab);
 
 const FilterHead = styled(Typography).attrs({ variant: "subtitle2" })`
   font-family: Lexend;
@@ -47,23 +48,18 @@ const DrawerBody = styled(Box)`
 /* ───────────────────────── component ─────────────────────────── */
 
 export default function FloatingSubCatFilter({
-  /* entire product list you fetched */
   products = [],
-
-  /* selections from the main Filters component */
   selectedBrand,
   selectedCategory,
   selectedSubCategory1 = [],
   selectedSubCategory2 = [],
   selectedSubCategory3 = [],
-
-  /* sub-cat-4 / 5 selections controlled here */
   selectedSubSeven,
   setSelectedSubSeven,
   selectedSubEight,
   setSelectedSubEight,
 }) {
-  /* ——— should FAB appear? ——— */
+  // only show FAB if all top-level filters are set
   const filterReady =
     !!selectedBrand &&
     !!selectedCategory &&
@@ -71,15 +67,12 @@ export default function FloatingSubCatFilter({
     selectedSubCategory2.length > 0 &&
     selectedSubCategory3.length > 0;
 
-  /* ——— open / close drawer ——— */
   const [open, setOpen] = useState(false);
-
-  /* close drawer automatically if user changes filters → not ready  */
   useEffect(() => {
     if (!filterReady && open) setOpen(false);
   }, [filterReady, open]);
 
-  /* ——— unique sub-cat-4 (7) / sub-cat-5 (8) lists ——— */
+  // derive sub-cat-4 & 5 lists
   const { allSubCatSeven, allSubCatEight } = useMemo(() => {
     const set7 = new Set();
     const set8 = new Set();
@@ -93,20 +86,42 @@ export default function FloatingSubCatFilter({
     };
   }, [products]);
 
-  /* ——— helper to toggle checkbox arrays ——— */
-  const toggleSel = (value, arr, setter) =>
-    setter(
-      arr.includes(value) ? arr.filter((v) => v !== value) : [...arr, value]
-    );
+  const toggleSel = (val, arr, setter) =>
+    setter(arr.includes(val) ? arr.filter((v) => v !== val) : [...arr, val]);
 
-  /* ——— render ——— */
-  if (!filterReady) return null; // FAB hidden until all required filters are set
+  // animation variants for the “reverse Thanos snap”
+  const fabVariants = {
+    hidden: { opacity: 0, scale: 0.2, filter: "blur(8px)" },
+    visible: {
+      opacity: 1,
+      scale: 1,
+      filter: "blur(0px)",
+      transition: { duration: 1, ease: [0.25, 1, 0.5, 1] },
+    },
+    exit: {
+      opacity: 0,
+      scale: 0.2,
+      filter: "blur(8px)",
+      transition: { duration: 0.7, ease: [0.25, 1, 0.5, 1] },
+    },
+  };
 
   return (
     <>
-      <StickyFab size="medium" onClick={() => setOpen(true)}>
-        <FilterListIcon />
-      </StickyFab>
+      <AnimatePresence>
+        {filterReady && (
+          <MotionFab
+            size="medium"
+            onClick={() => setOpen(true)}
+            initial="hidden"
+            animate="visible"
+            exit="exit"
+            variants={fabVariants}
+          >
+            <FilterListIcon />
+          </MotionFab>
+        )}
+      </AnimatePresence>
 
       <Drawer anchor="right" open={open} onClose={() => setOpen(false)}>
         <DrawerBody>
@@ -117,7 +132,7 @@ export default function FloatingSubCatFilter({
             </IconButton>
           </Box>
 
-          {/* Sub-Cat-4 (from SubCategory7) */}
+          {/* Sub-Cat-4 */}
           {!!allSubCatSeven.length && (
             <>
               <FilterHead>Sub Cat 4</FilterHead>
@@ -141,7 +156,7 @@ export default function FloatingSubCatFilter({
             </>
           )}
 
-          {/* Sub-Cat-5 (from SubCategory8) */}
+          {/* Sub-Cat-5 */}
           {!!allSubCatEight.length && (
             <>
               <FilterHead>Sub Cat 5</FilterHead>

@@ -10,6 +10,7 @@ const Cont = styled("div")`
   border-radius: 8px;
   border-width: 2px;
   border-style: solid;
+  width: 100%;
   border-color: ${(props) => props.bor};
 `;
 
@@ -49,13 +50,13 @@ const Search = styled("div")(({ theme }) => ({
 
 const StyledInputBase = styled(InputBase)(({ theme }) => ({
   color: "#000000",
-  width: "100%",
+  width: "auto",
   "& .MuiInputBase-input": {
     padding: theme.spacing(1, 1, 1, 0),
     // vertical padding + font size from searchIcon
     paddingLeft: `calc(1em + ${theme.spacing(4)})`,
     transition: theme.transitions.create("width"),
-    width: "100%",
+    width: "auto",
 
     [theme.breakpoints.up("sm")]: {
       width: "35ch",
