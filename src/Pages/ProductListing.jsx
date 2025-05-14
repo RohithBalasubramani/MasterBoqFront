@@ -1,15 +1,18 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+/*  src/Pages/ProductListing.jsx
+    – version with pagination-reset fix **and** the “Header” <TextField />  */
+
+import React, { useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 import {
   Badge,
-  BottomNavigationAction,
   BottomNavigation,
-  Checkbox,
+  BottomNavigationAction,
+  Button,
   FormControl,
   IconButton,
+  Input,
   MenuItem,
   Select,
-  Input,
   TextField,
 } from "@mui/material";
 import { styled as sty } from "@mui/material/styles";
@@ -21,8 +24,14 @@ import axios from "axios";
 import ProductCard from "../Components/ProductCard";
 import SearchAppBar from "../Components/StyledSearch";
 import Filter from "../Components/Filters/Filter";
+import FloatingSubCatFilter from "../Components/FloatingSubcatfilter";
 
-/* ────────────────────────  styled‑components  ────────────────────── */
+/* ───────────────────────  constants  ─────────────────────── */
+
+const BASE_LIST_URL = "https://www.boqmasteradmin.com/product/";
+const BASE_FILTER_URL = "https://www.boqmasteradmin.com/product/filter/";
+
+/* ───────────────────── styled bits (unchanged) ─────────────────── */
 
 const Container = styled.div`
   background-color: #ffffff;
@@ -62,34 +71,11 @@ const FilterWrap = styled.div`
   height: 90vh;
   margin: 0 5vh;
   overflow-y: auto;
-  -ms-overflow-style: none; /* IE & Edge */
-  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none;
+  scrollbar-width: none;
   &::-webkit-scrollbar {
-    display: none; /* Chrome */
+    display: none;
   }
-`;
-const FilterTwoCont = styled.div`
-  flex: 2;
-  margin-top: 3vh;
-  padding: 5vh 0 4vh 5vh;
-  border: 1px solid #e0e0e0;
-  border-radius: 4px;
-`;
-const FilterHead = styled.div`
-  font-family: Lexend, sans-serif;
-  font-size: 16px;
-  font-weight: 500;
-  text-transform: uppercase;
-  margin: 2vh 0 2vh;
-`;
-const FilterContTwo = styled.div`
-  display: grid;
-  grid-template-columns: repeat(3, auto);
-`;
-const FilterCont = styled.label`
-  font-family: Lexend, sans-serif;
-  font-size: 12px;
-  display: block;
 `;
 const StickyBottom = styled.div`
   position: sticky;
@@ -172,12 +158,9 @@ const Wrapper = styled.div`
   width: 100%;
   padding: 2vh;
   padding-bottom: 5vh;
-  height: 80vh; /* or whatever height you like */
-  overflow-y: auto; /* THIS is what the ref listens to */
+  height: 80vh;
+  overflow-y: auto;
 `;
-
-/* ─────────────────────────── MUI tweaks ──────────────────────────── */
-
 const StyledBadge = sty(Badge)(({ theme }) => ({
   "& .MuiBadge-badge": {
     right: -1,
@@ -188,99 +171,95 @@ const StyledBadge = sty(Badge)(({ theme }) => ({
   },
 }));
 const CustomBottomNavigationAction = sty(BottomNavigationAction)`
-  color: #ffffff;
-  &.Mui-selected {
-    color: #fff700;
-  }
-`;
+      color: #ffffff;
+      &.Mui-selected {
+        color: #fff700;
+      }
+    `;
 
-/* ─────────────────────────── component ──────────────────────────── */
+/* ───────────────────── component ───────────────────── */
 
-const ProductListing = () => {
-  /* ---------------- state ---------------- */
+export default function ProductListing() {
+  /* ---------- search ---------- */
+  const [searchQuery, setSearchQuery] = useState("");
+  const handleSearchQueryChange = (e) => setSearchQuery(e.target.value);
+  const handleSearch = () => {
+    const url = `${BASE_LIST_URL}?search=${encodeURIComponent(
+      searchQuery.trim()
+    )}`;
+    setProducts([]);
+    setCount(0);
+    setApplyFilter(false);
+    setNextUrl(BASE_LIST_URL); // reset standard pagination
+    fetchProducts(url);
+  };
+
+  /* ---------- filters & state ---------- */
   const [selectedBrand, setSelectedBrand] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [selectedSubCategory1, setSelectedSubCategory1] = useState([]);
   const [selectedSubCategory2, setSelectedSubCategory2] = useState([]);
   const [selectedSubCategory3, setSelectedSubCategory3] = useState([]);
+  const [selectedSubSeven, setSelectedSubSeven] = useState([]);
+  const [selectedSubEight, setSelectedSubEight] = useState([]);
   const [applyFilter, setApplyFilter] = useState(false);
 
   const [products, setProducts] = useState([]);
-  const [nextUrl, setNextUrl] = useState(
-    "https://www.boqmasteradmin.com/product/"
-  );
-  const [nextFilterUrl, setNextFilterUrl] = useState(
-    "https://www.boqmasteradmin.com/product/filter/"
-  );
+  const [nextUrl, setNextUrl] = useState(BASE_LIST_URL);
+  const [nextFilterUrl, setNextFilterUrl] = useState(BASE_FILTER_URL);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [count, setCount] = useState(0);
-
-  /* ―― unified search term (front‑end only) ―― */
-  const [searchTerm, setSearchTerm] = useState("");
   const [headName, setHeadName] = useState("");
-
-  /* price / brand / category filters (client‑side) */
-  const [selectedSubEleven, setSelectedSubEleven] = useState([]);
-  const [selectedSubTwelve, setSelectedSubTwelve] = useState([]);
   const [sortOrder, setSortOrder] = useState("asc");
 
-  /* ---------------- refs ---------------- */
   const scrollContainerRef = useRef(null);
+  const cartLen = useSelector((s) => s.cartreducer.carts.length);
 
-  /* ---------------- redux cart ---------------- */
-  const cart = useSelector((state) => state.cartreducer.carts);
-  const cartLen = cart.length;
-
-  /* ---------------- fetch helpers ---------------- */
+  /* ---------- data fetchers ---------- */
   const fetchProducts = async (url = null) => {
-    if ((nextUrl || url) && !loading) {
-      setLoading(true);
-      setError(null);
-      try {
-        const res = await axios.get(url || nextUrl);
-        const data = res.data;
-        setProducts((prev) => [...prev, ...data.results]);
-        setNextUrl(data.next);
-        setCount((prev) => prev + data.results.length);
-      } catch (_) {
-        setError("Failed to load products. Please try again.");
-      } finally {
-        setLoading(false);
-      }
+    if ((!url && !nextUrl) || loading) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await axios.get(url || nextUrl);
+      setProducts((prev) => [...prev, ...res.data.results]);
+      setNextUrl(res.data.next);
+      setCount(res.data.count);
+    } catch {
+      setError("Failed to load products, please retry.");
+    } finally {
+      setLoading(false);
     }
   };
 
   const fetchProductsWithFilter = async (payload, url = null) => {
-    if ((nextFilterUrl || url) && !loading) {
-      setLoading(true);
-      setError(null);
-      try {
-        const res = await axios.post(url || nextFilterUrl, payload);
-        const data = res.data;
-        setProducts((prev) => [...prev, ...data.results]);
-        setNextFilterUrl(data.next);
-        setCount((prev) => prev + data.results.length);
-      } catch (_) {
-        setError("Failed to load products. Please try again.");
-      } finally {
-        setLoading(false);
-      }
+    if ((!url && !nextFilterUrl) || loading) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await axios.post(url || nextFilterUrl, payload);
+      setProducts((prev) => [...prev, ...res.data.results]);
+      setNextFilterUrl(res.data.next);
+      setCount(res.data.count);
+    } catch {
+      setError("Failed to load products, please retry.");
+    } finally {
+      setLoading(false);
     }
   };
 
-  /* ---------------- initial load ---------------- */
+  /* ---------- initial load ---------- */
   useEffect(() => {
-    fetchProducts("https://www.boqmasteradmin.com/product/");
+    fetchProducts(BASE_LIST_URL);
   }, []);
 
-  /* ---------------- infinite scroll ---------------- */
+  /* ---------- infinite scroll ---------- */
   useEffect(() => {
-    const container = scrollContainerRef.current;
-    if (!container) return;
-
+    const el = scrollContainerRef.current;
+    if (!el) return;
     const onScroll = () => {
-      const { scrollTop, scrollHeight, clientHeight } = container;
+      const { scrollTop, clientHeight, scrollHeight } = el;
       if (scrollTop + clientHeight >= scrollHeight - 50 && !loading) {
         if (applyFilter) {
           const payload = {
@@ -296,69 +275,21 @@ const ProductListing = () => {
         }
       }
     };
-    container.addEventListener("scroll", onScroll);
-    return () => container.removeEventListener("scroll", onScroll);
-  }, [applyFilter, loading, selectedBrand, selectedCategory]);
+    el.addEventListener("scroll", onScroll);
+    return () => el.removeEventListener("scroll", onScroll);
+  }, [applyFilter, loading]);
 
-  /* ---------------- debounce search ---------------- */
-  const debounce = (fn, delay) => {
-    let t;
-    return (...args) => {
-      clearTimeout(t);
-      t = setTimeout(() => fn(...args), delay);
-    };
-  };
-  const debouncedSearch = useCallback(
-    debounce((term) => setSearchTerm(term), 300),
-    []
-  );
-
-  const handleSearchChange = (e) => {
-    const val = e.target.value;
-    debouncedSearch(val);
-  };
-
-  /* ---------------- helpers ---------------- */
-  const searchKeywords = searchTerm ? searchTerm.toLowerCase().split(" ") : [];
-
-  const filteredBySearch = products.filter((p) => {
-    if (!searchKeywords.length) return true;
-    const subs = [
-      p.ProductName,
-      p.SubCategory,
-      p.SubCategory2,
-      p.SubCategory3,
-      p.SubCategory4,
-      p.SubCategory5,
-      p.SubCategory6,
-    ];
-    return searchKeywords.every((kw) =>
-      subs.some((sub) => sub && sub.toLowerCase().includes(kw))
-    );
-  });
-
-  /* dynamic sub‑cat 11 & 12 lists */
-  const allSubCatEleven = Array.from(
-    new Set(products.map((p) => p.SubCategory11).filter(Boolean))
-  );
-  const allSubCatTwelve = Array.from(
-    new Set(products.map((p) => p.SubCategory12).filter(Boolean))
-  );
-
-  /* apply filters that are purely client‑side (left unchanged) */
-  const finalProducts = filteredBySearch; // ← extend with price/brand filters if needed
-
-  /* sort */
-  const parsePrice = (v) => (isNaN(parseFloat(v)) ? Infinity : parseFloat(v));
-  const sortedProducts = finalProducts
+  /* ---------- helpers ---------- */
+  const priceNum = (v) => (isNaN(parseFloat(v)) ? Infinity : parseFloat(v));
+  const sortedProducts = products
     .slice()
     .sort((a, b) =>
       sortOrder === "asc"
-        ? parsePrice(a.Price) - parsePrice(b.Price)
-        : parsePrice(b.Price) - parsePrice(a.Price)
+        ? priceNum(a.Price) - priceNum(b.Price)
+        : priceNum(b.Price) - priceNum(a.Price)
     );
 
-  /* ---------------- CTA helpers ---------------- */
+  /* ---------- filter CTA ---------- */
   const callFetchProductsWithFilter = () => {
     if (
       selectedBrand ||
@@ -377,31 +308,33 @@ const ProductListing = () => {
       setProducts([]);
       setCount(0);
       setApplyFilter(true);
-      fetchProductsWithFilter(payload, nextFilterUrl);
+      setNextFilterUrl(BASE_FILTER_URL); // **reset every new run**
+      fetchProductsWithFilter(payload, BASE_FILTER_URL);
     }
   };
 
   const clearFilters = () => {
-    if (applyFilter) {
-      setSelectedBrand(null);
-      setSelectedCategory(null);
-      setSelectedSubCategory1([]);
-      setSelectedSubCategory2([]);
-      setSelectedSubCategory3([]);
-      setProducts([]);
-      setCount(0);
-      setApplyFilter(false);
-      setNextUrl("https://www.boqmasteradmin.com/product/");
-      fetchProducts("https://www.boqmasteradmin.com/product/");
-    }
+    if (!applyFilter) return;
+    setSelectedBrand(null);
+    setSelectedCategory(null);
+    setSelectedSubCategory1([]);
+    setSelectedSubCategory2([]);
+    setSelectedSubCategory3([]);
+    setProducts([]);
+    setCount(0);
+    setApplyFilter(false);
+    setNextUrl(BASE_LIST_URL);
+    setNextFilterUrl(BASE_FILTER_URL);
+    fetchProducts(BASE_LIST_URL);
   };
 
-  /* ---------------- render ---------------- */
+  /* ---------- navigation state ---------- */
   const [navValue, setNavValue] = useState(0);
 
+  /* ======================== render ======================== */
   return (
     <Container>
-      {/* ───── top bar ───── */}
+      {/* ───────── header ───────── */}
       <HeadCon>
         <BottomNavigation
           value={navValue}
@@ -411,9 +344,7 @@ const ProductListing = () => {
             background: "#09193d",
             borderRadius: "20px",
             color: "#b2b2b2",
-            "& .Mui-selected, .Mui-selected > svg": {
-              color: "#fff700",
-            },
+            "& .Mui-selected, .Mui-selected > svg": { color: "#fff700" },
           }}
         >
           <CustomBottomNavigationAction
@@ -439,10 +370,15 @@ const ProductListing = () => {
           />
         </BottomNavigation>
 
-        {/* unified in‑memory search */}
         <SearchCon bg="#f2f2f2" bor="#e0e0e0" col="#4f4f4f">
-          <SearchAppBar search={searchTerm} onchange={handleSearchChange} />
+          <SearchAppBar
+            search={searchQuery}
+            onchange={handleSearchQueryChange}
+          />
         </SearchCon>
+        <Button onClick={handleSearch} sx={{ ml: 1, color: "#fff700" }}>
+          Search
+        </Button>
 
         <CartCont>
           <IconButton component={Link} to="/table" sx={{ color: "white" }}>
@@ -453,9 +389,9 @@ const ProductListing = () => {
         </CartCont>
       </HeadCon>
 
-      {/* ───── body ───── */}
+      {/* ───────── body ───────── */}
       <ContainerWhole>
-        {/* ─── filters column ─── */}
+        {/* filters */}
         <FilterWrap>
           <Filter
             selectedBrand={selectedBrand}
@@ -469,49 +405,41 @@ const ProductListing = () => {
             setSelectedSubCategory2={setSelectedSubCategory2}
             setSelectedSubCategory3={setSelectedSubCategory3}
           />
-
-          {/* sticky apply / clear */}
           <StickyBottom>
             <PrimaryButton onClick={callFetchProductsWithFilter}>
               Apply Filter
             </PrimaryButton>
             <OutlineButton onClick={clearFilters}>Clear Filter</OutlineButton>
           </StickyBottom>
-
-          {/* Sub Cat 6 → all unique SubCategory11 */}
-          {/* … unchanged checkbox code for SubCategory11 & 12 … */}
         </FilterWrap>
 
-        {/* ─── products column ─── */}
+        {/* products */}
         <WrapperWhole>
           <WrapperHead>
-            <WrapperTit>{searchTerm}</WrapperTit>
+            <WrapperTit>{searchQuery}</WrapperTit>
             <WrapperFlex>
-              <WrapperNum>{count} Results</WrapperNum>
-              <NameInput style={{ marginLeft: 16 }}>
-                <TextField
-                  label="Card Header"
-                  size="small"
-                  value={headName}
-                  onChange={(e) => setHeadName(e.target.value)}
-                />
-              </NameInput>
+              <WrapperNum>{count} Results</WrapperNum>
+
+              {/*   ←────   “Header” input preserved   ────→ */}
+
               <Sort>
                 <NameInput>
-                  <Input
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    placeholder="Search"
+                  <TextField
+                    id="outlined-basic"
+                    label="Header"
+                    variant="outlined"
+                    size="small"
+                    onChange={(e) => setHeadName(e.target.value)}
                   />
                 </NameInput>
-                <SortText>Sort by price:</SortText>
+                <SortText style={{ marginRight: 8 }}>Sort by price:</SortText>
                 <FormControl sx={{ m: 1, minWidth: 120 }} size="small">
                   <Select value={sortOrder} displayEmpty>
                     <MenuItem onClick={() => setSortOrder("desc")} value="desc">
-                      High → Low
+                      High → Low
                     </MenuItem>
                     <MenuItem onClick={() => setSortOrder("asc")} value="asc">
-                      Low → High
+                      Low → High
                     </MenuItem>
                   </Select>
                 </FormControl>
@@ -519,19 +447,35 @@ const ProductListing = () => {
             </WrapperFlex>
           </WrapperHead>
 
-          {/* product grid */}
           <Wrapper ref={scrollContainerRef}>
             {sortedProducts.map((p) => (
               <ProductCard key={p.id} HeadName={headName} Prod={p} />
             ))}
-            {loading && <div className="spinner">🔄 Loading more…</div>}
+            {loading && <div className="spinner">🔄 Loading more…</div>}
             {error && <div style={{ color: "red" }}>{error}</div>}
-            {!nextUrl && !loading && <p>✅ All products loaded.</p>}
+            {!nextUrl && !loading && !applyFilter && (
+              <p>✅ All products loaded.</p>
+            )}
+            {!nextFilterUrl && !loading && applyFilter && (
+              <p>✅ All filtered products loaded.</p>
+            )}
           </Wrapper>
         </WrapperWhole>
       </ContainerWhole>
+      <FloatingSubCatFilter
+        products={products} /* full list */
+        /* main filter selections */
+        selectedBrand={selectedBrand}
+        selectedCategory={selectedCategory}
+        selectedSubCategory1={selectedSubCategory1}
+        selectedSubCategory2={selectedSubCategory2}
+        selectedSubCategory3={selectedSubCategory3}
+        /* sub-cat-4/5 selections */
+        selectedSubSeven={selectedSubSeven}
+        setSelectedSubSeven={setSelectedSubSeven}
+        selectedSubEight={selectedSubEight}
+        setSelectedSubEight={setSelectedSubEight}
+      />
     </Container>
   );
-};
-
-export default ProductListing;
+}

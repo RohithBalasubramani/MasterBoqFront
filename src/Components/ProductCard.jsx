@@ -157,7 +157,7 @@ const ProductCard = ({ Prod, HeadName }) => {
   /* filter whenever list OR Prod changes */
   useEffect(() => {
     if (!Prod) return; // Prod may be undefined on very first render
-    const prodCat8 = (Prod.SubCategory8 || "").trim().toLowerCase();
+    const prodCat9 = (Prod.SubCategory9 || "").trim().toLowerCase();
     const prodCat4 = (Prod.SubCategory4 || "").trim().toLowerCase();
 
     const matches = auxiliaries.filter((aux) => {
@@ -170,9 +170,9 @@ const ProductCard = ({ Prod, HeadName }) => {
         .map((s) => s.trim().toLowerCase())
         .filter(Boolean);
 
-      if (prodCat8 && prodCat4)
-        return auxCat4Arr.includes(prodCat8) && auxCat3Arr.includes(prodCat4);
-      if (prodCat8) return auxCat4Arr.includes(prodCat8);
+      if (prodCat9 && prodCat4)
+        return auxCat4Arr.includes(prodCat9) && auxCat3Arr.includes(prodCat4);
+      if (prodCat9) return auxCat4Arr.includes(prodCat9);
       if (prodCat4) return auxCat3Arr.includes(prodCat4);
       return false;
     });
