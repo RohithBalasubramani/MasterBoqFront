@@ -88,19 +88,22 @@ const Filter = ({
     selectedBrand && selectedCategory
       ? Object.keys((metaTree[selectedBrand] || {})[selectedCategory] || {})
       : [];
-  const subCat2Options = selectedSubCategory1.flatMap((sc1) =>
+  let subCat2Options = selectedSubCategory1.flatMap((sc1) =>
     Object.keys(
       ((metaTree[selectedBrand] || {})[selectedCategory] || {})[sc1] || {}
     )
   );
-  const subCat3Options = selectedSubCategory2.flatMap((sc2) =>
+  subCat2Options = new Set(subCat2Options)
+  let subCat3Options = selectedSubCategory2.flatMap((sc2) =>
     selectedSubCategory1.flatMap(
       (sc1) =>
         (((metaTree[selectedBrand] || {})[selectedCategory] || {})[sc1] || {})[
           sc2
         ] || []
-    )
-  );
+      )
+    );
+  subCat3Options = new Set(subCat3Options)
+
 
   // clear helpers
   const clearBelowBrand = () => {
@@ -201,7 +204,7 @@ const Filter = ({
                   transition={{ duration: 0.3 }}
                 >
                   <FilterHead>Sub Cat 3</FilterHead>
-                  {subCat3Options.map((sc3) => (
+                  {Array.from(subCat3Options).sort().map((sc3) => (
                     <FilterCheckBox
                       key={sc3}
                       value={sc3}
@@ -228,7 +231,7 @@ const Filter = ({
               >
                 <FilterHead>Sub Cat 2</FilterHead>
                 <TwoColGrid>
-                  {subCat2Options.map((sc2) => (
+                  {Array.from(subCat2Options).sort().map((sc2) => (
                     <FilterCheckBox
                       key={sc2}
                       value={sc2}
