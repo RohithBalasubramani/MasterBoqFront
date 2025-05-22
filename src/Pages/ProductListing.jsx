@@ -198,7 +198,13 @@ export default function ProductListing() {
       searchQuery.trim()
     )}`;
     setProducts([]);
+    setFilteredProducts([]);
     setCount(0);
+    setSelectedBrand(null);
+    setSelectedCategory(null);
+    setSelectedSubCategory1([]);
+    setSelectedSubCategory2([]);
+    setSelectedSubCategory3([]);
     setApplyFilter(false);
     setNextUrl(BASE_LIST_URL); // reset standard pagination
     fetchProducts(url);
@@ -212,9 +218,12 @@ export default function ProductListing() {
   const [selectedSubCategory3, setSelectedSubCategory3] = useState([]);
   const [selectedSubSeven, setSelectedSubSeven] = useState([]);
   const [selectedSubEight, setSelectedSubEight] = useState([]);
+  const [selectedSubTen, setSelectedSubTen] = useState([]);
+  const [selectedSubEleven, setSelectedSubEleven] = useState([]);
   const [applyFilter, setApplyFilter] = useState(false);
 
   const [products, setProducts] = useState([]);
+  const [filteredProducts, setFilteredProducts] = useState([])
   const [nextUrl, setNextUrl] = useState(BASE_LIST_URL);
   const [nextFilterUrl, setNextFilterUrl] = useState(BASE_FILTER_URL);
   const [loading, setLoading] = useState(false);
@@ -233,6 +242,7 @@ export default function ProductListing() {
     setError(null);
     try {
       const res = await axios.get(url || nextUrl);
+      setFilteredProducts([])
       setProducts((prev) => [...prev, ...res.data.results]);
       setNextUrl(res.data.next);
       setCount(res.data.count);
@@ -249,6 +259,7 @@ export default function ProductListing() {
     setError(null);
     try {
       const res = await axios.post(url || nextFilterUrl, payload);
+      setFilteredProducts([])
       setProducts((prev) => [...prev, ...res.data.results]);
       setNextFilterUrl(res.data.next);
       setCount(res.data.count);
@@ -289,15 +300,39 @@ export default function ProductListing() {
     return () => el.removeEventListener("scroll", onScroll);
   }, [applyFilter, loading]);
 
+  useEffect(() => {
+    let productsCopy = JSON.parse(JSON.stringify(products))
+    if(selectedSubSeven.length > 0){
+      productsCopy = productsCopy.filter((p) => selectedSubSeven.includes(p.SubCategory7))
+    }
+    if(selectedSubEight.length > 0){
+      productsCopy = productsCopy.filter((p) => selectedSubEight.includes(p.SubCategory8))
+    }
+    if(selectedSubTen.length > 0){
+      productsCopy = productsCopy.filter((p) => selectedSubTen.includes(p.SubCategory10))
+    }
+    if(selectedSubEleven.length > 0){
+      productsCopy = productsCopy.filter((p) => selectedSubEleven.includes(p.SubCategory11))
+    }
+    setFilteredProducts(productsCopy)
+  }, [selectedSubSeven, selectedSubEight, selectedSubTen, selectedSubEleven])
+
   /* ---------- helpers ---------- */
   const priceNum = (v) => (isNaN(parseFloat(v)) ? Infinity : parseFloat(v));
-  const sortedProducts = products
+  const sortedProducts = filteredProducts.length > 0 ? filteredProducts : products
     .slice()
     .sort((a, b) =>
       sortOrder === "asc"
         ? priceNum(a.Price) - priceNum(b.Price)
         : priceNum(b.Price) - priceNum(a.Price)
     );
+  
+  const clearSubFilters = () => {
+    setSelectedSubSeven([])
+    setSelectedSubEight([])
+    setSelectedSubTen([])
+    setSelectedSubEleven([])
+  }
 
   /* ---------- filter CTA ---------- */
   const callFetchProductsWithFilter = () => {
@@ -429,7 +464,7 @@ export default function ProductListing() {
         {/* products */}
         <WrapperWhole>
           <WrapperHead>
-            <WrapperTit>{searchQuery}</WrapperTit>
+            {/*<WrapperTit>{searchQuery}</WrapperTit>*/}
             <WrapperFlex>
               <WrapperNum>{count} Results</WrapperNum>
 
@@ -488,6 +523,10 @@ export default function ProductListing() {
         setSelectedSubSeven={setSelectedSubSeven}
         selectedSubEight={selectedSubEight}
         setSelectedSubEight={setSelectedSubEight}
+        selectedSubTen={selectedSubTen}
+        setSelectedSubTen={setSelectedSubTen}
+        selectedSubEleven={selectedSubEleven}
+        setSelectedSubEleven={setSelectedSubEleven}
       />
     </Container>
   );

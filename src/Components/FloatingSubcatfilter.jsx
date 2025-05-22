@@ -58,6 +58,10 @@ export default function FloatingSubCatFilter({
   setSelectedSubSeven,
   selectedSubEight,
   setSelectedSubEight,
+  selectedSubTen,
+  setSelectedSubTen,
+  selectedSubEleven,
+  setSelectedSubEleven,
 }) {
   // only show FAB if all top-level filters are set
   const filterReady =
@@ -73,16 +77,22 @@ export default function FloatingSubCatFilter({
   }, [filterReady, open]);
 
   // derive sub-cat-4 & 5 lists
-  const { allSubCatSeven, allSubCatEight } = useMemo(() => {
+  const { allSubCatSeven, allSubCatEight, allSubCatTen, allSubCatEleven } = useMemo(() => {
     const set7 = new Set();
     const set8 = new Set();
+    const set10 = new Set();
+    const set11 = new Set();
     products.forEach((p) => {
       if (p.SubCategory7) set7.add(p.SubCategory7.trim());
       if (p.SubCategory8) set8.add(p.SubCategory8.trim());
+      if (p.SubCategory10) set10.add(p.SubCategory10.trim());
+      if (p.SubCategory11) set11.add(p.SubCategory11.trim());
     });
     return {
       allSubCatSeven: Array.from(set7).sort(),
       allSubCatEight: Array.from(set8).sort(),
+      allSubCatTen: Array.from(set10).sort(),
+      allSubCatEleven: Array.from(set11).sort(),
     };
   }, [products]);
 
@@ -175,6 +185,52 @@ export default function FloatingSubCatFilter({
                     }}
                   />
                   {sc8}
+                </FilterCont>
+              ))}
+            </>
+          )}
+          {/* Sub-Cat-6 */}
+          {!!allSubCatTen.length && (
+            <>
+              <FilterHead>Sub Cat 6</FilterHead>
+              {allSubCatTen.map((sc10) => (
+                <FilterCont key={sc10}>
+                  <Checkbox
+                    size="small"
+                    value={sc10}
+                    checked={selectedSubTen.includes(sc10)}
+                    onChange={() =>
+                      toggleSel(sc10, selectedSubTen, setSelectedSubTen)
+                    }
+                    sx={{
+                      color: "#E0E0E0",
+                      "&.Mui-checked": { color: "#ff6600" },
+                    }}
+                  />
+                  {sc10}
+                </FilterCont>
+              ))}
+            </>
+          )}
+          {/* Sub-Cat-7 */}
+          {!!allSubCatEleven.length && (
+            <>
+              <FilterHead>Sub Cat 7</FilterHead>
+              {allSubCatEleven.map((sc11) => (
+                <FilterCont key={sc11}>
+                  <Checkbox
+                    size="small"
+                    value={sc11}
+                    checked={selectedSubEleven.includes(sc11)}
+                    onChange={() =>
+                      toggleSel(sc11, selectedSubEleven, setSelectedSubEleven)
+                    }
+                    sx={{
+                      color: "#E0E0E0",
+                      "&.Mui-checked": { color: "#ff6600" },
+                    }}
+                  />
+                  {sc11}
                 </FilterCont>
               ))}
             </>
