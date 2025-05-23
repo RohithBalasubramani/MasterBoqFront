@@ -6,13 +6,14 @@
         • Subtle skeleton shimmer while first aux page loads
         • Smooth height transition when the aux panel opens/closes            */
 
-import { Add } from "@mui/icons-material";
+import { Add, CloseOutlined } from "@mui/icons-material";
 import React, { useEffect, useRef, useState } from "react";
 import { useDispatch } from "react-redux";
 import styled, { keyframes } from "styled-components";
 import { ADD } from "../Redux/actions/action";
 import axios from "axios";
-import { Snackbar, Alert } from "@mui/material";
+import { Snackbar, Alert, Input, Button } from "@mui/material";
+import SearchIcon from "@mui/icons-material/Search";
 
 /* ─────────────────────── styled components ─────────────────────── */
 
@@ -163,6 +164,8 @@ export default function ProductCard({ Prod, HeadName }) {
   const [auxNext, setAuxNext] = useState(null);
   const [auxLoad, setAuxLoad] = useState(false);
   const [showAux, setShowAux] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showSearchIcon, setShowSearchIcon] = useState(true);
   const listRef = useRef(null);
 
   /* snackbar */
@@ -220,6 +223,27 @@ export default function ProductCard({ Prod, HeadName }) {
   if (!Prod) return null;
   const prodForCart = { ...Prod, Heading: HeadName, quantity: 1 };
 
+  const handleSearchQueryChange = (e) => {
+    setShowSearchIcon(true);
+    setSearchQuery(e.target.value);
+  };
+
+  const fetchAuxilariesWithUserQuery = async () => {
+    if(searchQuery === "") return
+    setAuxItems([]);
+    await fetchAux(
+      `https://www.boqmasteradmin.com/auxiliaries/?product=${Prod.id}&search=${encodeURIComponent(searchQuery.trim())}`
+    );
+    setShowSearchIcon(false);
+  };
+
+  const clearSearch = async () =>{
+    setAuxItems([]);
+    setShowSearchIcon(true)
+    setSearchQuery("")
+    await fetchAux(`https://www.boqmasteradmin.com/product/${Prod.id}/auxiliaries/`)
+  }
+
   /* ─────────────────────── render ─────────────────────── */
   return (
     <>
@@ -244,6 +268,23 @@ export default function ProductCard({ Prod, HeadName }) {
       {/* aux panel */}
       {showAux && (
         <AuxContainer ref={listRef}>
+          <div>
+            <Input
+              value={searchQuery}
+              onChange={handleSearchQueryChange}
+              placeholder="Search"
+            ></Input>
+            {!showSearchIcon && (
+              <Button onClick={() => clearSearch()}>
+                <CloseOutlined />
+              </Button>
+            )}
+            {showSearchIcon && (
+              <Button onClick={() => fetchAuxilariesWithUserQuery()}>
+                <SearchIcon />
+              </Button>
+            )}
+          </div>
           <AuxHeader>Auxiliaries for {Prod.ProductName}</AuxHeader>
 
           {auxItems.length === 0 && auxLoad && (

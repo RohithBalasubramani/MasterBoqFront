@@ -143,7 +143,7 @@ const AuxiliaryListing = () => {
         const response = await axios.get(
           "https://www.boqmasteradmin.com/auxiliaries/"
         ); // Replace with your actual API endpoint
-        setAuxiliaries(response.data);
+        setAuxiliaries(response.data.results);
       } catch (error) {
         console.error("Error fetching auxiliaries:", error);
       }
@@ -196,8 +196,9 @@ const AuxiliaryListing = () => {
   const allSubCategory6 = Array.from(
     new Set(
       auxiliaries
-        .map((aux) => aux.SubCategory6.split(","))
+        .map((aux) => aux.SubCategory6 && aux.SubCategory6.split(","))
         .flat()
+        .filter(Boolean)
         .map((value) => value.trim())
     )
   );
