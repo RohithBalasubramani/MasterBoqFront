@@ -30,13 +30,14 @@ const RightColumn = styled.div`
   padding: 2vh;
   padding-top: 0;
   flex: 1.6;
+  margin-top: 2vh;
+  margin-bottom: 2vh;
 `;
 
 const TwoColGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  row-gap: 0.4rem;
-  column-gap: 0.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+  gap: 0.1rem;
 `;
 
 const FilterHead = styled.div`
@@ -93,17 +94,16 @@ const Filter = ({
       ((metaTree[selectedBrand] || {})[selectedCategory] || {})[sc1] || {}
     )
   );
-  subCat2Options = new Set(subCat2Options)
+  subCat2Options = new Set(subCat2Options);
   let subCat3Options = selectedSubCategory2.flatMap((sc2) =>
     selectedSubCategory1.flatMap(
       (sc1) =>
         (((metaTree[selectedBrand] || {})[selectedCategory] || {})[sc1] || {})[
           sc2
         ] || []
-      )
-    );
-  subCat3Options = new Set(subCat3Options)
-
+    )
+  );
+  subCat3Options = new Set(subCat3Options);
 
   // clear helpers
   const clearBelowBrand = () => {
@@ -176,21 +176,55 @@ const Filter = ({
                   transition={{ duration: 0.3 }}
                 >
                   <FilterHead>Sub Cat 1</FilterHead>
-                  {subCat1Options.map((sc1) => (
-                    <FilterCheckBox
-                      key={sc1}
-                      value={sc1}
-                      selectedValues={selectedSubCategory1}
-                      setCheckBoxValue={(vals) => {
-                        setSelectedSubCategory1(vals);
-                        clearBelowSubCat1();
-                      }}
-                    />
-                  ))}
+                  <TwoColGrid>
+                    {subCat1Options.map((sc1) => (
+                      <FilterCheckBox
+                        key={sc1}
+                        value={sc1}
+                        selectedValues={selectedSubCategory1}
+                        setCheckBoxValue={(vals) => {
+                          setSelectedSubCategory1(vals);
+                          clearBelowSubCat1();
+                        }}
+                      />
+                    ))}
+                  </TwoColGrid>
                 </motion.div>
               )}
             </AnimatePresence>
           </TopGroup>
+
+          <RightColumn>
+            <AnimatePresence>
+              {!!selectedSubCategory1.length && (
+                <motion.div
+                  key="subcat2"
+                  initial="hidden"
+                  animate="visible"
+                  exit="exit"
+                  variants={variants}
+                  transition={{ duration: 0.3 }}
+                >
+                  <FilterHead>Sub Cat 2</FilterHead>
+                  <TwoColGrid>
+                    {Array.from(subCat2Options)
+                      .sort()
+                      .map((sc2) => (
+                        <FilterCheckBox
+                          key={sc2}
+                          value={sc2}
+                          selectedValues={selectedSubCategory2}
+                          setCheckBoxValue={(vals) => {
+                            setSelectedSubCategory2(vals);
+                            clearBelowSubCat2();
+                          }}
+                        />
+                      ))}
+                  </TwoColGrid>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </RightColumn>
 
           <BottomGroup>
             <AnimatePresence>
@@ -204,49 +238,23 @@ const Filter = ({
                   transition={{ duration: 0.3 }}
                 >
                   <FilterHead>Sub Cat 3</FilterHead>
-                  {Array.from(subCat3Options).sort().map((sc3) => (
-                    <FilterCheckBox
-                      key={sc3}
-                      value={sc3}
-                      selectedValues={selectedSubCategory3}
-                      setCheckBoxValue={setSelectedSubCategory3}
-                    />
-                  ))}
+                  <TwoColGrid>
+                    {Array.from(subCat3Options)
+                      .sort()
+                      .map((sc3) => (
+                        <FilterCheckBox
+                          key={sc3}
+                          value={sc3}
+                          selectedValues={selectedSubCategory3}
+                          setCheckBoxValue={setSelectedSubCategory3}
+                        />
+                      ))}
+                  </TwoColGrid>
                 </motion.div>
               )}
             </AnimatePresence>
           </BottomGroup>
         </LeftColumn>
-
-        <RightColumn>
-          <AnimatePresence>
-            {!!selectedSubCategory1.length && (
-              <motion.div
-                key="subcat2"
-                initial="hidden"
-                animate="visible"
-                exit="exit"
-                variants={variants}
-                transition={{ duration: 0.3 }}
-              >
-                <FilterHead>Sub Cat 2</FilterHead>
-                <TwoColGrid>
-                  {Array.from(subCat2Options).sort().map((sc2) => (
-                    <FilterCheckBox
-                      key={sc2}
-                      value={sc2}
-                      selectedValues={selectedSubCategory2}
-                      setCheckBoxValue={(vals) => {
-                        setSelectedSubCategory2(vals);
-                        clearBelowSubCat2();
-                      }}
-                    />
-                  ))}
-                </TwoColGrid>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </RightColumn>
       </FilterFlex>
     </div>
   );

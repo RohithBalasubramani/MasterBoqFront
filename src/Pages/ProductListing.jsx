@@ -1,5 +1,4 @@
-/*  src/Pages/ProductListing.jsx
-    – version with pagination-reset fix **and** the “Header” <TextField />  */
+/*  src/Pages/ProductListing.jsx – complete component with server-side filters + client-side AND sub-filters + original styling  */
 
 import React, { useEffect, useRef, useState } from "react";
 import styled from "styled-components";
@@ -7,10 +6,8 @@ import {
   Badge,
   BottomNavigation,
   BottomNavigationAction,
-  Button,
   FormControl,
   IconButton,
-  Input,
   MenuItem,
   Select,
   TextField,
@@ -25,22 +22,21 @@ import ProductCard from "../Components/ProductCard";
 import SearchAppBar from "../Components/StyledSearch";
 import Filter from "../Components/Filters/Filter";
 import FloatingSubCatFilter from "../Components/FloatingSubcatfilter";
-import { motion, AnimatePresence } from "framer-motion";
 
-/* ───────────────────────  constants  ─────────────────────── */
+/* ───────────────────────── constants ───────────────────────── */
 
 const BASE_LIST_URL = "https://www.boqmasteradmin.com/product/";
 const BASE_FILTER_URL = "https://www.boqmasteradmin.com/product/filter/";
 
-/* ───────────────────── styled bits (unchanged) ─────────────────── */
+/* ───────────────────────── styled bits ───────────────────────── */
 
 const Container = styled.div`
-  background-color: #ffffff;
+  background: #ffffff;
   width: 100%;
   color: #333333;
 `;
 const HeadCon = styled.div`
-  background-color: #15375a;
+  background: #15375a;
   position: sticky;
   top: 0;
   width: 100%;
@@ -53,7 +49,7 @@ const SearchCon = styled.div`
   width: 60%;
   display: flex;
   height: 7vh;
-  background-color: ${(p) => p.bg};
+  background: ${(p) => p.bg};
   border: 2px solid ${(p) => p.bor};
   border-radius: 8px;
   color: ${(p) => p.col};
@@ -72,7 +68,6 @@ const FilterWrap = styled.div`
   height: 90vh;
   margin: 0 5vh;
   overflow-y: auto;
-  -ms-overflow-style: none;
   scrollbar-width: none;
   &::-webkit-scrollbar {
     display: none;
@@ -87,24 +82,23 @@ const StickyBottom = styled.div`
   display: flex;
   flex-direction: row-reverse;
   gap: 0.5vw;
-  background-color: #ffffff;
+  background: #ffffff;
   box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
   z-index: 10;
 `;
-const PrimaryButton = styled.button`
-  background-color: #09193d;
+const PrimaryBtn = styled.button`
+  background: #09193d;
   color: #fff700;
   border-radius: 4px;
   padding: 0.5rem 1.5rem;
   font-family: Lexend, sans-serif;
   font-weight: 500;
-  text-transform: none;
-  transition: background-color 0.2s ease;
+  transition: background 0.2s;
   &:hover {
-    background-color: #0c204f;
+    background: #0c204f;
   }
 `;
-const OutlineButton = styled.button`
+const OutlineBtn = styled.button`
   background: transparent;
   color: #09193d;
   border: 2px solid #09193d;
@@ -112,8 +106,7 @@ const OutlineButton = styled.button`
   padding: 0.5rem 1.5rem;
   font-family: Lexend, sans-serif;
   font-weight: 500;
-  text-transform: none;
-  transition: all 0.2s ease;
+  transition: all 0.2s;
   &:hover {
     background: #09193d;
     color: #fff700;
@@ -121,53 +114,21 @@ const OutlineButton = styled.button`
 `;
 const WrapperWhole = styled.div`
   flex: 8;
-  background-color: #ffffff;
+  background: #ffffff;
   border-left: 1px solid #e0e0e0;
 `;
 const WrapperHead = styled.div`
   padding-left: 2vh;
   border-bottom: 1px solid #e0e0e0;
 `;
-const WrapperTit = styled.div`
-  font-family: Lexend, sans-serif;
-  font-size: 48px;
-  font-weight: 500;
-`;
 const WrapperFlex = styled.div`
   display: flex;
   width: 100%;
-`;
-
-const CardGrid = styled.div`
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 1.5rem;
   padding: 2vh;
-  height: 80vh;
-  overflow-y: auto;
-`;
-const WrapperNum = styled.div`
-  font-family: Lexend, sans-serif;
-  font-size: 12px;
-  margin-top: auto;
-`;
-const Sort = styled.div`
-  margin-left: auto;
-  margin-right: 5%;
-  display: flex;
-  align-items: center;
-`;
-const SortText = styled.div`
-  font-family: Lexend, sans-serif;
-  font-size: 16px;
-`;
-const NameInput = styled.div`
-  padding: 10px;
 `;
 const Wrapper = styled.div`
   width: 100%;
-  padding: 2vh;
-  padding-bottom: 5vh;
+  padding: 2vh 2vh 5vh;
   height: 80vh;
   overflow-y: auto;
 `;
@@ -176,76 +137,75 @@ const StyledBadge = sty(Badge)(({ theme }) => ({
     right: -1,
     border: `2px solid ${theme.palette.background.paper}`,
     padding: "0 4px",
-    backgroundColor: "#fff700",
+    background: "#fff700",
     color: "#000000",
   },
 }));
-const CustomBottomNavigationAction = sty(BottomNavigationAction)`
-      color: #ffffff;
-      &.Mui-selected {
-        color: #fff700;
-      }
-    `;
+const CustomNavAction = sty(BottomNavigationAction)`
+  color: #ffffff;
+  &.Mui-selected {
+    color: #fff700;
+  }
+`;
 
-/* ───────────────────── component ───────────────────── */
-
+/* ───────────────────────── component ───────────────────────── */
 export default function ProductListing() {
-  /* ---------- search ---------- */
+  /* ── search ── */
   const [searchQuery, setSearchQuery] = useState("");
-  const handleSearchQueryChange = (e) => setSearchQuery(e.target.value);
+  const onSearchChange = (e) => setSearchQuery(e.target.value);
   const handleSearch = () => {
-    const url = `${BASE_LIST_URL}?search=${encodeURIComponent(
-      searchQuery.trim()
-    )}`;
-    setProducts([]);
-    setFilteredProducts([]);
-    setCount(0);
     setSelectedBrand(null);
     setSelectedCategory(null);
     setSelectedSubCategory1([]);
     setSelectedSubCategory2([]);
     setSelectedSubCategory3([]);
-    setApplyFilter(false);
-    setNextUrl(BASE_LIST_URL); // reset standard pagination
+    const url = `${BASE_LIST_URL}?search=${encodeURIComponent(
+      searchQuery.trim()
+    )}`;
+    resetPagination();
     fetchProducts(url);
   };
 
-  /* ---------- filters & state ---------- */
+  /* ── server-side filters ── */
   const [selectedBrand, setSelectedBrand] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [selectedSubCategory1, setSelectedSubCategory1] = useState([]);
   const [selectedSubCategory2, setSelectedSubCategory2] = useState([]);
   const [selectedSubCategory3, setSelectedSubCategory3] = useState([]);
+
+  /* ── client-side sub-filters ── */
   const [selectedSubSeven, setSelectedSubSeven] = useState([]);
   const [selectedSubEight, setSelectedSubEight] = useState([]);
   const [selectedSubTen, setSelectedSubTen] = useState([]);
   const [selectedSubEleven, setSelectedSubEleven] = useState([]);
-  const [applyFilter, setApplyFilter] = useState(false);
 
+  /* ── list state ── */
+  const [applyFilter, setApplyFilter] = useState(false);
   const [products, setProducts] = useState([]);
-  const [filteredProducts, setFilteredProducts] = useState([])
   const [nextUrl, setNextUrl] = useState(BASE_LIST_URL);
   const [nextFilterUrl, setNextFilterUrl] = useState(BASE_FILTER_URL);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [count, setCount] = useState(0);
+  const [serverCount, setServerCount] = useState(0);
   const [headName, setHeadName] = useState("");
   const [sortOrder, setSortOrder] = useState("asc");
+  const [navValue, setNavValue] = useState(0);
 
-  const scrollContainerRef = useRef(null);
+  const scrollRef = useRef(null);
   const cartLen = useSelector((s) => s.cartreducer.carts.length);
 
-  /* ---------- data fetchers ---------- */
+  /* ── helpers ── */
+  const priceNum = (v) => (isNaN(parseFloat(v)) ? Infinity : parseFloat(v));
+
+  /* ── fetchers ── */
   const fetchProducts = async (url = null) => {
     if ((!url && !nextUrl) || loading) return;
     setLoading(true);
-    setError(null);
     try {
-      const res = await axios.get(url || nextUrl);
-      setFilteredProducts([])
-      setProducts((prev) => [...prev, ...res.data.results]);
-      setNextUrl(res.data.next);
-      setCount(res.data.count);
+      const { data } = await axios.get(url || nextUrl);
+      setProducts((prev) => [...prev, ...data.results]);
+      setNextUrl(data.next);
+      setServerCount(data.count);
     } catch {
       setError("Failed to load products, please retry.");
     } finally {
@@ -256,13 +216,11 @@ export default function ProductListing() {
   const fetchProductsWithFilter = async (payload, url = null) => {
     if ((!url && !nextFilterUrl) || loading) return;
     setLoading(true);
-    setError(null);
     try {
-      const res = await axios.post(url || nextFilterUrl, payload);
-      setFilteredProducts([])
-      setProducts((prev) => [...prev, ...res.data.results]);
-      setNextFilterUrl(res.data.next);
-      setCount(res.data.count);
+      const { data } = await axios.post(url || nextFilterUrl, payload);
+      setProducts((prev) => [...prev, ...data.results]);
+      setNextFilterUrl(data.next);
+      setServerCount(data.count);
     } catch {
       setError("Failed to load products, please retry.");
     } finally {
@@ -270,72 +228,57 @@ export default function ProductListing() {
     }
   };
 
-  /* ---------- initial load ---------- */
+  /* ── initial load ── */
   useEffect(() => {
     fetchProducts(BASE_LIST_URL);
   }, []);
 
-  /* ---------- infinite scroll ---------- */
+  /* ── infinite scroll ── */
   useEffect(() => {
-    const el = scrollContainerRef.current;
+    const el = scrollRef.current;
     if (!el) return;
     const onScroll = () => {
       const { scrollTop, clientHeight, scrollHeight } = el;
       if (scrollTop + clientHeight >= scrollHeight - 50 && !loading) {
-        if (applyFilter) {
-          const payload = {
-            brand: selectedBrand,
-            subCategory: selectedCategory,
-            subCategory1: selectedSubCategory1,
-            subCategory2: selectedSubCategory2,
-            subCategory3: selectedSubCategory3,
-          };
-          fetchProductsWithFilter(payload);
-        } else {
-          fetchProducts();
-        }
+        applyFilter ? fetchProductsWithFilter(buildPayload()) : fetchProducts();
       }
     };
     el.addEventListener("scroll", onScroll);
     return () => el.removeEventListener("scroll", onScroll);
   }, [applyFilter, loading]);
 
-  useEffect(() => {
-    let productsCopy = JSON.parse(JSON.stringify(products))
-    if(selectedSubSeven.length > 0){
-      productsCopy = productsCopy.filter((p) => selectedSubSeven.includes(p.SubCategory7))
-    }
-    if(selectedSubEight.length > 0){
-      productsCopy = productsCopy.filter((p) => selectedSubEight.includes(p.SubCategory8))
-    }
-    if(selectedSubTen.length > 0){
-      productsCopy = productsCopy.filter((p) => selectedSubTen.includes(p.SubCategory10))
-    }
-    if(selectedSubEleven.length > 0){
-      productsCopy = productsCopy.filter((p) => selectedSubEleven.includes(p.SubCategory11))
-    }
-    setFilteredProducts(productsCopy)
-  }, [selectedSubSeven, selectedSubEight, selectedSubTen, selectedSubEleven])
+  const buildPayload = () => ({
+    brand: selectedBrand,
+    subCategory: selectedCategory,
+    subCategory1: selectedSubCategory1,
+    subCategory2: selectedSubCategory2,
+    subCategory3: selectedSubCategory3,
+  });
 
-  /* ---------- helpers ---------- */
-  const priceNum = (v) => (isNaN(parseFloat(v)) ? Infinity : parseFloat(v));
-  const sortedProducts = filteredProducts.length > 0 ? filteredProducts : products
-    .slice()
-    .sort((a, b) =>
-      sortOrder === "asc"
-        ? priceNum(a.Price) - priceNum(b.Price)
-        : priceNum(b.Price) - priceNum(a.Price)
-    );
-  
-  const clearSubFilters = () => {
-    setSelectedSubSeven([])
-    setSelectedSubEight([])
-    setSelectedSubTen([])
-    setSelectedSubEleven([])
-  }
+  /* ── client-side sub-filter AND logic ── */
+  const applySubFilters = (list) => {
+    let out = list;
+    if (selectedSubSeven.length)
+      out = out.filter((p) => selectedSubSeven.includes(p.SubCategory7));
+    if (selectedSubEight.length)
+      out = out.filter((p) => selectedSubEight.includes(p.SubCategory8));
+    if (selectedSubTen.length)
+      out = out.filter((p) => selectedSubTen.includes(p.SubCategory10));
+    if (selectedSubEleven.length)
+      out = out.filter((p) => selectedSubEleven.includes(p.SubCategory11));
+    return out;
+  };
 
-  /* ---------- filter CTA ---------- */
-  const callFetchProductsWithFilter = () => {
+  /* ── derive list to render ── */
+  const filteredLocal = applySubFilters(products);
+  const sortedProducts = filteredLocal.sort((a, b) =>
+    sortOrder === "asc"
+      ? priceNum(a.Price) - priceNum(b.Price)
+      : priceNum(b.Price) - priceNum(a.Price)
+  );
+
+  /* ── CTA handlers ── */
+  const doServerFilter = () => {
     if (
       selectedBrand ||
       selectedCategory ||
@@ -343,43 +286,41 @@ export default function ProductListing() {
       selectedSubCategory2.length ||
       selectedSubCategory3.length
     ) {
-      const payload = {
-        brand: selectedBrand,
-        subCategory: selectedCategory,
-        subCategory1: selectedSubCategory1,
-        subCategory2: selectedSubCategory2,
-        subCategory3: selectedSubCategory3,
-      };
-      setProducts([]);
-      setCount(0);
+      resetPagination();
       setApplyFilter(true);
-      setNextFilterUrl(BASE_FILTER_URL); // **reset every new run**
-      fetchProductsWithFilter(payload, BASE_FILTER_URL);
+      fetchProductsWithFilter(buildPayload(), BASE_FILTER_URL);
     }
   };
 
   const clearFilters = () => {
-    if (!applyFilter) return;
     setSelectedBrand(null);
     setSelectedCategory(null);
     setSelectedSubCategory1([]);
     setSelectedSubCategory2([]);
     setSelectedSubCategory3([]);
-    setProducts([]);
-    setCount(0);
+
+    /* clear sub-filters */
+    setSelectedSubSeven([]);
+    setSelectedSubEight([]);
+    setSelectedSubTen([]);
+    setSelectedSubEleven([]);
+
+    resetPagination();
     setApplyFilter(false);
-    setNextUrl(BASE_LIST_URL);
-    setNextFilterUrl(BASE_FILTER_URL);
     fetchProducts(BASE_LIST_URL);
   };
 
-  /* ---------- navigation state ---------- */
-  const [navValue, setNavValue] = useState(0);
+  const resetPagination = () => {
+    setProducts([]);
+    setServerCount(0);
+    setNextUrl(BASE_LIST_URL);
+    setNextFilterUrl(BASE_FILTER_URL);
+  };
 
-  /* ======================== render ======================== */
+  /* ───────────────────────── render ───────────────────────── */
   return (
     <Container>
-      {/* ───────── header ───────── */}
+      {/* ───── header ───── */}
       <HeadCon>
         <BottomNavigation
           value={navValue}
@@ -387,49 +328,42 @@ export default function ProductListing() {
           showLabels
           sx={{
             background: "#09193d",
-            borderRadius: "20px",
-            color: "#b2b2b2",
-            "& .Mui-selected, .Mui-selected > svg": { color: "#fff700" },
+            borderRadius: 20,
+            "& .Mui-selected , & .Mui-selected > svg": { color: "#fff700" },
           }}
         >
-          <CustomBottomNavigationAction
+          <CustomNavAction
             component={Link}
             to="/"
-            label="Home"
             value={0}
+            label="Home"
             icon={<Inventory />}
           />
-          <CustomBottomNavigationAction
+          <CustomNavAction
             component={Link}
             to="/Groups"
-            label="Groups"
             value={1}
+            label="Groups"
             icon={<Category />}
           />
-          <CustomBottomNavigationAction
+          <CustomNavAction
             component={Link}
             to="/auxiliaries"
-            label="Auxiliaries"
             value={2}
+            label="Auxiliaries"
             icon={<BackupTable />}
           />
         </BottomNavigation>
 
         <SearchCon bg="#f2f2f2" bor="#e0e0e0" col="#4f4f4f">
-          <SearchAppBar
-            search={searchQuery}
-            onchange={handleSearchQueryChange}
-          />
-          <OutlineButton
-            onClick={handleSearch}
-            sx={{ ml: 1, color: "#fff700" }}
-          >
+          <SearchAppBar search={searchQuery} onchange={onSearchChange} />
+          <OutlineBtn onClick={handleSearch} style={{ marginLeft: 8 }}>
             Search
-          </OutlineButton>
+          </OutlineBtn>
         </SearchCon>
 
         <CartCont>
-          <IconButton component={Link} to="/table" sx={{ color: "white" }}>
+          <IconButton component={Link} to="/table" sx={{ color: "#fff" }}>
             <StyledBadge badgeContent={cartLen}>
               <BackupTable />
             </StyledBadge>
@@ -437,9 +371,9 @@ export default function ProductListing() {
         </CartCont>
       </HeadCon>
 
-      {/* ───────── body ───────── */}
+      {/* ───── body ───── */}
       <ContainerWhole>
-        {/* filters */}
+        {/* filter column */}
         <FilterWrap>
           <Filter
             selectedBrand={selectedBrand}
@@ -454,71 +388,76 @@ export default function ProductListing() {
             setSelectedSubCategory3={setSelectedSubCategory3}
           />
           <StickyBottom>
-            <PrimaryButton onClick={callFetchProductsWithFilter}>
-              Apply Filter
-            </PrimaryButton>
-            <OutlineButton onClick={clearFilters}>Clear Filter</OutlineButton>
+            <PrimaryBtn onClick={doServerFilter}>Apply Filter</PrimaryBtn>
+            <OutlineBtn onClick={clearFilters}>Clear Filter</OutlineBtn>
           </StickyBottom>
         </FilterWrap>
 
-        {/* products */}
+        {/* product column */}
         <WrapperWhole>
           <WrapperHead>
-            {/*<WrapperTit>{searchQuery}</WrapperTit>*/}
             <WrapperFlex>
-              <WrapperNum>{count} Results</WrapperNum>
-
-              {/*   ←────   “Header” input preserved   ────→ */}
-
-              <Sort>
-                <NameInput>
-                  <TextField
-                    id="outlined-basic"
-                    label="Header"
-                    variant="outlined"
-                    size="small"
-                    onChange={(e) => setHeadName(e.target.value)}
-                  />
-                </NameInput>
-                <SortText style={{ marginRight: 8 }}>Sort by price:</SortText>
-                <FormControl sx={{ m: 1, minWidth: 120 }} size="small">
-                  <Select value={sortOrder} displayEmpty>
-                    <MenuItem onClick={() => setSortOrder("desc")} value="desc">
-                      High → Low
-                    </MenuItem>
-                    <MenuItem onClick={() => setSortOrder("asc")} value="asc">
-                      Low → High
-                    </MenuItem>
+              <div style={{ fontFamily: "Lexend", fontSize: 14 }}>
+                {filteredLocal.length} of {serverCount} Results
+              </div>
+              <div
+                style={{
+                  marginLeft: "auto",
+                  display: "flex",
+                  alignItems: "center",
+                }}
+              >
+                <div
+                  style={{ marginRight: 8, fontFamily: "Lexend", fontSize: 16 }}
+                >
+                  Sort by price:
+                </div>
+                <FormControl size="small" sx={{ minWidth: 120 }}>
+                  <Select
+                    value={sortOrder}
+                    onChange={(e) => setSortOrder(e.target.value)}
+                  >
+                    <MenuItem value="desc">High → Low</MenuItem>
+                    <MenuItem value="asc">Low → High</MenuItem>
                   </Select>
                 </FormControl>
-              </Sort>
+              </div>
+              <div style={{ marginLeft: 16 }}>
+                <TextField
+                  label="Header"
+                  variant="outlined"
+                  size="small"
+                  onChange={(e) => setHeadName(e.target.value)}
+                />
+              </div>
             </WrapperFlex>
           </WrapperHead>
 
-          <Wrapper ref={scrollContainerRef}>
+          <Wrapper ref={scrollRef}>
             {sortedProducts.map((p) => (
               <ProductCard key={p.id} HeadName={headName} Prod={p} />
             ))}
-            {loading && <div className="spinner">🔄 Loading more…</div>}
+
+            {loading && <div style={{ padding: 8 }}>🔄 Loading…</div>}
             {error && <div style={{ color: "red" }}>{error}</div>}
             {!nextUrl && !loading && !applyFilter && (
-              <p>✅ All products loaded.</p>
+              <p>All products loaded.</p>
             )}
             {!nextFilterUrl && !loading && applyFilter && (
-              <p>✅ All filtered products loaded.</p>
+              <p>All filtered products loaded.</p>
             )}
           </Wrapper>
         </WrapperWhole>
       </ContainerWhole>
+
+      {/* floating sub-filter panel */}
       <FloatingSubCatFilter
-        products={products} /* full list */
-        /* main filter selections */
+        products={products}
         selectedBrand={selectedBrand}
         selectedCategory={selectedCategory}
         selectedSubCategory1={selectedSubCategory1}
         selectedSubCategory2={selectedSubCategory2}
         selectedSubCategory3={selectedSubCategory3}
-        /* sub-cat-4/5 selections */
         selectedSubSeven={selectedSubSeven}
         setSelectedSubSeven={setSelectedSubSeven}
         selectedSubEight={selectedSubEight}

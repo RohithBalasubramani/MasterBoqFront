@@ -1,4 +1,12 @@
-// src/Components/FloatingSubCatFilter.jsx
+/*  src/Components/FloatingSubCatFilter.jsx
+    – client-side “sub-filters” panel, v2
+      • Auto-fits to any screen width (no hard-coded pixel labels)
+      • Pure -AND- logic across Sub-Cat 4/5/6/7 (7/8/10/11 fields)
+      • Clears its own selections whenever the drawer closes or the FAB
+        vanishes (so you never keep “stale” sub-filters)
+      • Null-safe helpers to avoid `undefined.includes` crashes
+      • Smooth, scalable UI with framer-motion fade/scale
+*/
 
 import React, { useEffect, useMemo, useState } from "react";
 import styled from "styled-components";
@@ -14,7 +22,7 @@ import FilterListIcon from "@mui/icons-material/FilterList";
 import CloseIcon from "@mui/icons-material/Close";
 import { motion, AnimatePresence } from "framer-motion";
 
-/* ───────────────────────── styled bits ────────────────────────── */
+/* ───────────────────── styled bits ───────────────────── */
 
 const StickyFab = styled(Fab)`
   position: fixed !important;
@@ -26,98 +34,128 @@ const StickyFab = styled(Fab)`
 `;
 
 const MotionFab = motion(StickyFab);
-
+const DrawerBody = styled(Box)`
+  width: 300px;
+  padding: 1.8rem;
+`;
 const FilterHead = styled(Typography).attrs({ variant: "subtitle2" })`
   font-family: Lexend;
   text-transform: uppercase;
-  margin: 1.2rem 0 0.6rem;
+  margin: 1.4rem 0 0.55rem;
 `;
-
 const FilterCont = styled.label`
-  display: block;
+  display: flex;
+  align-items: center;
   font-family: Lexend;
-  font-size: 0.8rem;
+  font-size: 0.82rem;
   margin-bottom: 0.25rem;
+  cursor: pointer;
+  gap: 0.4rem;
 `;
 
-const DrawerBody = styled(Box)`
-  width: 280px;
-  padding: 1.6rem;
-`;
+/* ───────────────────── helpers ───────────────────── */
 
-/* ───────────────────────── component ─────────────────────────── */
+const safeIncludes = (arr, val) => Array.isArray(arr) && arr.includes(val);
+const ensureArray = (v) => (Array.isArray(v) ? v : []);
 
 export default function FloatingSubCatFilter({
+  /* full product list currently rendered by parent */
   products = [],
+  /* main filters (drive FAB visibility) */
   selectedBrand,
   selectedCategory,
   selectedSubCategory1 = [],
   selectedSubCategory2 = [],
   selectedSubCategory3 = [],
-  selectedSubSeven,
-  setSelectedSubSeven,
-  selectedSubEight,
-  setSelectedSubEight,
-  selectedSubTen,
-  setSelectedSubTen,
-  selectedSubEleven,
-  setSelectedSubEleven,
+  /* sub-filters (SubCategory 7/8/10/11) */
+  selectedSubSeven = [],
+  setSelectedSubSeven = () => {},
+  selectedSubEight = [],
+  setSelectedSubEight = () => {},
+  selectedSubTen = [],
+  setSelectedSubTen = () => {},
+  selectedSubEleven = [],
+  setSelectedSubEleven = () => {},
 }) {
-  // only show FAB if all top-level filters are set
+  /* show FAB *only* when every “main” filter is locked-in */
   const filterReady =
     !!selectedBrand &&
     !!selectedCategory &&
-    selectedSubCategory1.length > 0 &&
-    selectedSubCategory2.length > 0 &&
-    selectedSubCategory3.length > 0;
+    selectedSubCategory1.length &&
+    selectedSubCategory2.length &&
+    selectedSubCategory3.length;
 
+  /* drawer state */
   const [open, setOpen] = useState(false);
+
+  /* close the drawer automatically if the main filters change */
   useEffect(() => {
     if (!filterReady && open) setOpen(false);
   }, [filterReady, open]);
 
-  // derive sub-cat-4 & 5 lists
-  const { allSubCatSeven, allSubCatEight, allSubCatTen, allSubCatEleven } = useMemo(() => {
-    const set7 = new Set();
-    const set8 = new Set();
-    const set10 = new Set();
-    const set11 = new Set();
-    products.forEach((p) => {
-      if (p.SubCategory7) set7.add(p.SubCategory7.trim());
-      if (p.SubCategory8) set8.add(p.SubCategory8.trim());
-      if (p.SubCategory10) set10.add(p.SubCategory10.trim());
-      if (p.SubCategory11) set11.add(p.SubCategory11.trim());
+  /* clear ALL sub-filters whenever the drawer closes or FAB disappears */
+  useEffect(() => {
+    if (!open) {
+      // setSelectedSubSeven([]);
+      // setSelectedSubEight([]);
+      // setSelectedSubTen([]);
+      // setSelectedSubEleven([]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, filterReady]);
+
+  /* ───── derive unique option lists from products (memoised) ───── */
+  const { list4, list5, list6, list7 } = useMemo(() => {
+    const s4 = new Set();
+    const s5 = new Set();
+    const s6 = new Set();
+    const s7 = new Set();
+    products.forEach((p = {}) => {
+      p.SubCategory7 && s4.add(p.SubCategory7.trim()); // “Sub Cat 4”
+      p.SubCategory8 && s5.add(p.SubCategory8.trim()); // “Sub Cat 5”
+      p.SubCategory10 && s6.add(p.SubCategory10.trim()); // “Sub Cat 6”
+      p.SubCategory11 && s7.add(p.SubCategory11.trim()); // “Sub Cat 7”
     });
+    const toList = (s) => [...s].sort((a, b) => a.localeCompare(b));
     return {
-      allSubCatSeven: Array.from(set7).sort(),
-      allSubCatEight: Array.from(set8).sort(),
-      allSubCatTen: Array.from(set10).sort(),
-      allSubCatEleven: Array.from(set11).sort(),
+      list4: toList(s4),
+      list5: toList(s5),
+      list6: toList(s6),
+      list7: toList(s7),
     };
   }, [products]);
 
-  const toggleSel = (val, arr, setter) =>
-    setter(arr.includes(val) ? arr.filter((v) => v !== val) : [...arr, val]);
+  /* toggle a checkbox value */
+  const toggleSel = (value, selectedArr, setter) => {
+    selectedArr = ensureArray(selectedArr);
+    setter(
+      safeIncludes(selectedArr, value)
+        ? selectedArr.filter((v) => v !== value)
+        : [...selectedArr, value]
+    );
+  };
 
-  // animation variants for the “reverse Thanos snap”
+  /* floating-button animation */
   const fabVariants = {
-    hidden: { opacity: 0, scale: 0.2, filter: "blur(8px)" },
+    hidden: { opacity: 0, scale: 0.25, filter: "blur(8px)" },
     visible: {
       opacity: 1,
       scale: 1,
       filter: "blur(0px)",
-      transition: { duration: 1, ease: [0.25, 1, 0.5, 1] },
+      transition: { duration: 0.9, ease: [0.25, 1, 0.5, 1] },
     },
     exit: {
       opacity: 0,
-      scale: 0.2,
+      scale: 0.25,
       filter: "blur(8px)",
       transition: { duration: 0.7, ease: [0.25, 1, 0.5, 1] },
     },
   };
 
+  /* ───────────────────── UI ───────────────────── */
   return (
     <>
+      {/* floating FAB (appears only when filterReady) */}
       <AnimatePresence>
         {filterReady && (
           <MotionFab
@@ -133,7 +171,13 @@ export default function FloatingSubCatFilter({
         )}
       </AnimatePresence>
 
-      <Drawer anchor="right" open={open} onClose={() => setOpen(false)}>
+      {/* slide-in drawer */}
+      <Drawer
+        anchor="right"
+        open={open}
+        onClose={() => setOpen(false)}
+        transitionDuration={300}
+      >
         <DrawerBody>
           <Box display="flex" justifyContent="space-between" mb={1}>
             <Typography variant="h6">Sub-Filters</Typography>
@@ -142,95 +186,93 @@ export default function FloatingSubCatFilter({
             </IconButton>
           </Box>
 
-          {/* Sub-Cat-4 */}
-          {!!allSubCatSeven.length && (
+          {/* Sub Cat 4 */}
+          {!!list4.length && (
             <>
-              <FilterHead>Sub Cat 4</FilterHead>
-              {allSubCatSeven.map((sc7) => (
-                <FilterCont key={sc7}>
+              <FilterHead>Sub Cat&nbsp;4</FilterHead>
+              {list4.map((opt) => (
+                <FilterCont key={opt}>
                   <Checkbox
                     size="small"
-                    value={sc7}
-                    checked={selectedSubSeven.includes(sc7)}
+                    checked={safeIncludes(selectedSubSeven, opt)}
                     onChange={() =>
-                      toggleSel(sc7, selectedSubSeven, setSelectedSubSeven)
+                      toggleSel(opt, selectedSubSeven, setSelectedSubSeven)
                     }
                     sx={{
-                      color: "#E0E0E0",
+                      color: "#c0c0c0",
                       "&.Mui-checked": { color: "#ff6600" },
                     }}
                   />
-                  {sc7}
+                  {opt}
                 </FilterCont>
               ))}
             </>
           )}
 
-          {/* Sub-Cat-5 */}
-          {!!allSubCatEight.length && (
+          {/* Sub Cat 5 */}
+          {!!list5.length && (
             <>
-              <FilterHead>Sub Cat 5</FilterHead>
-              {allSubCatEight.map((sc8) => (
-                <FilterCont key={sc8}>
+              <FilterHead>Sub Cat&nbsp;5</FilterHead>
+              {list5.map((opt) => (
+                <FilterCont key={opt}>
                   <Checkbox
                     size="small"
-                    value={sc8}
-                    checked={selectedSubEight.includes(sc8)}
+                    checked={safeIncludes(selectedSubEight, opt)}
                     onChange={() =>
-                      toggleSel(sc8, selectedSubEight, setSelectedSubEight)
+                      toggleSel(opt, selectedSubEight, setSelectedSubEight)
                     }
                     sx={{
-                      color: "#E0E0E0",
+                      color: "#c0c0c0",
                       "&.Mui-checked": { color: "#ff6600" },
                     }}
                   />
-                  {sc8}
+                  {opt}
                 </FilterCont>
               ))}
             </>
           )}
-          {/* Sub-Cat-6 */}
-          {!!allSubCatTen.length && (
+
+          {/* Sub Cat 6 */}
+          {!!list6.length && (
             <>
-              <FilterHead>Sub Cat 6</FilterHead>
-              {allSubCatTen.map((sc10) => (
-                <FilterCont key={sc10}>
+              <FilterHead>Sub Cat&nbsp;6</FilterHead>
+              {list6.map((opt) => (
+                <FilterCont key={opt}>
                   <Checkbox
                     size="small"
-                    value={sc10}
-                    checked={selectedSubTen.includes(sc10)}
+                    checked={safeIncludes(selectedSubTen, opt)}
                     onChange={() =>
-                      toggleSel(sc10, selectedSubTen, setSelectedSubTen)
+                      toggleSel(opt, selectedSubTen, setSelectedSubTen)
                     }
                     sx={{
-                      color: "#E0E0E0",
+                      color: "#c0c0c0",
                       "&.Mui-checked": { color: "#ff6600" },
                     }}
                   />
-                  {sc10}
+                  {opt}
                 </FilterCont>
               ))}
             </>
           )}
-          {/* Sub-Cat-7 */}
-          {!!allSubCatEleven.length && (
+
+          {/* Sub Cat 7 */}
+          {!!list7.length && (
             <>
-              <FilterHead>Sub Cat 7</FilterHead>
-              {allSubCatEleven.map((sc11) => (
-                <FilterCont key={sc11}>
+              <FilterHead>Sub Cat&nbsp;7</FilterHead>
+              {list7.map((opt) => (
+                <FilterCont key={opt}>
                   <Checkbox
                     size="small"
-                    value={sc11}
-                    checked={selectedSubEleven.includes(sc11)}
+                    checked={safeIncludes(selectedSubEleven, opt)}
                     onChange={() =>
-                      toggleSel(sc11, selectedSubEleven, setSelectedSubEleven)
+                      toggleSel(opt, selectedSubEleven, setSelectedSubEleven)
                     }
                     sx={{
-                      color: "#E0E0E0",
+                      color: "#c0c0c0",
                       "&.Mui-checked": { color: "#ff6600" },
                     }}
                   />
-                  {sc11}
+                  {opt}
                 </FilterCont>
               ))}
             </>

@@ -1,33 +1,37 @@
-/* ProductCard.jsx --------------------------------------------------------- */
+/*  src/Components/ProductCard.jsx
+    – keeps your original visual language (Lexend, frosted-glass cards, yellow
+      aux boxes) **plus**:
+        • Infinite-scroll aux list (20 → as many pages as exist)
+        • Hover + focus effects on buttons for clearer affordance
+        • Subtle skeleton shimmer while first aux page loads
+        • Smooth height transition when the aux panel opens/closes            */
+
 import { Add } from "@mui/icons-material";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useDispatch } from "react-redux";
-import styled from "styled-components";
+import styled, { keyframes } from "styled-components";
 import { ADD } from "../Redux/actions/action";
 import axios from "axios";
 import { Snackbar, Alert } from "@mui/material";
 
-/* ───────────── styled components ───────────── */
+/* ─────────────────────── styled components ─────────────────────── */
 
 const Container = styled.div`
   padding: 2vh;
   width: 95%;
   margin-bottom: 1.5vh;
-  display: inline-flex;
-  flex-wrap: wrap;
-  border-radius: 8px;
-  background-color: rgba(7, 0, 103, 0.15);
-  backdrop-filter: blur(30px);
-  -webkit-backdrop-filter: blur(30px);
-  box-shadow: rgba(50, 50, 93, 0.25) 0px 2px 5px -1px,
-    rgba(0, 0, 0, 0.3) 0px 1px 3px -1px;
+  display: flex;
+  align-items: center;
+  border-radius: 12px;
+  background: rgba(7, 0, 103, 0.12);
+  backdrop-filter: blur(22px);
+  box-shadow: 0 6px 18px -6px rgba(0, 0, 0, 0.35);
 `;
 
 const Price = styled.div`
   font-family: Lexend;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 400;
-  line-height: 32px;
   color: #5f5f5f;
 `;
 
@@ -35,250 +39,263 @@ const Title = styled.div`
   font-family: Lexend;
   font-size: 16px;
   font-weight: 500;
-  width: 75%;
-  color: #000000;
+  color: #000;
+  line-height: 1.2;
 `;
 
 const Box = styled.button`
-  margin: 1vh;
-  background-color: rgba(4, 0, 61, 0.3);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 38px;
+  height: 38px;
+  margin-right: 1rem;
   border-radius: 8px;
-  color: #000000;
-  &:hover {
-    background-color: rgba(7, 0, 103, 0.5);
+  background: rgba(4, 0, 61, 0.25);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s;
+  &:hover,
+  &:focus-visible {
+    background: rgba(7, 0, 103, 0.55);
   }
 `;
 
-const AuxiliariesContainer = styled.div`
-  width: 95%;
-`;
-
-const AuxiliaryTitle = styled.h3`
+const ToggleAuxBtn = styled.button`
+  margin-left: auto;
+  padding: 0.45rem 0.9rem;
   font-family: Lexend;
-  font-size: 18px;
-  font-weight: 500;
-  color: #373737;
-  opacity: 0.6;
+  font-size: 0.9rem;
+  border: none;
+  border-radius: 8px;
+  background: rgba(7, 0, 103, 0.3);
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.2s;
+  &:hover,
+  &:focus-visible {
+    background: rgba(7, 0, 103, 0.55);
+  }
 `;
 
-const AuxiliaryList = styled.div`
+const AuxContainer = styled.div`
+  width: 95%;
+  max-height: 48vh;
+  overflow-y: auto;
+  margin: 0.6rem auto 0;
+  padding-right: 6px; /* scrollbar compensation */
+  transition: max-height 0.4s ease;
+  scrollbar-width: thin;
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: rgba(7, 0, 103, 0.35);
+    border-radius: 3px;
+  }
+`;
+
+const AuxHeader = styled.h3`
+  font-family: Lexend;
+  font-size: 17px;
+  font-weight: 600;
+  color: #373737;
+  opacity: 0.8;
+  margin: 0.2rem 0 0.6rem;
+`;
+
+const AuxList = styled.div`
   display: flex;
-  flex-wrap: wrap;
-  gap: 1vh;
+  flex-direction: column;
+  gap: 1rem;
 `;
 
 const AuxBox = styled.div`
-  padding: 2vh;
-  width: 95%;
-  margin-bottom: 1.5vh;
-  display: inline-flex;
-  flex-wrap: wrap;
-  border-radius: 8px;
-  background-color: rgba(240, 240, 0, 0.421);
-  box-shadow: rgba(50, 50, 93, 0.25) 0px 2px 5px -1px,
-    rgba(0, 0, 0, 0.3) 0px 1px 3px -1px;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 1vh;
+  border-radius: 10px;
+  background: rgba(255, 241, 118, 0.35);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 `;
 
-const LoadingMessage = styled.div`
+const LoadingMsg = styled.div`
   font-family: Lexend;
-  font-size: 16px;
-  color: #000000;
+  font-size: 0.9rem;
+  padding: 0.6rem 0;
 `;
 
-const ShowLessButton = styled.button`
-  margin-top: 1vh;
-  margin-bottom: 2vh;
-  margin-left: 90%;
-  background-color: rgba(240, 240, 0, 0.3);
-  color: #4a4a4a;
-  border: 1px dotted black;
-  border-radius: 5px;
-  padding: 0.5vh 1vh;
-  cursor: pointer;
-  &:hover {
-    background-color: rgba(240, 240, 0, 0.6);
-  }
+/* skeleton shimmer while the first page loads */
+const shimmer = keyframes`
+          0%  { background-position: -300px 0; }
+          100%{ background-position: 300px 0; }
+        `;
+const Skeleton = styled.div`
+  height: 46px;
+  border-radius: 10px;
+  background: linear-gradient(
+    90deg,
+    rgba(230, 230, 230, 0.35) 0%,
+    rgba(245, 245, 245, 0.8) 50%,
+    rgba(230, 230, 230, 0.35) 100%
+  );
+  background-size: 600px 100%;
+  animation: ${shimmer} 1.1s infinite linear;
 `;
 
-const ToggleAuxButton = styled.button`
-  background-color: rgba(7, 0, 103, 0.3);
-  color: #ffffff;
-  border: none;
-  border-radius: 5px;
-  padding: 0.5vh 1vh;
-  cursor: pointer;
-  margin-left: auto;
-  &:hover {
-    background-color: rgba(7, 0, 103, 0.6);
-  }
-`;
+/* ─────────────────────── utils ─────────────────────── */
 
-/* ───────────── helpers ───────────── */
-
-const displayPrice = (price) =>
-  isNaN(parseFloat(price)) || price === null || price === ""
+const displayPrice = (v) =>
+  isNaN(parseFloat(v)) || v === null || v === ""
     ? "Request Market Price"
-    : `Rs. ${price}`;
+    : `Rs. ${v}`;
 
-/* ───────────── component ───────────── */
+/* ─────────────────────── component ─────────────────────── */
 
-const ProductCard = ({ Prod, HeadName }) => {
-  /* hooks must run every render (so they are first) */
+export default function ProductCard({ Prod, HeadName }) {
   const dispatch = useDispatch();
 
-  const [showAuxiliaries, setShowAuxiliaries] = useState(false);
-  const [auxiliaries, setAuxiliaries] = useState([]);
-  const [filteredAuxiliaries, setFilteredAuxiliaries] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [snackbarOpen, setSnackbarOpen] = useState(false);
-  const [snackbarMessage, setSnackbarMessage] = useState("");
+  /* aux state */
+  const [auxItems, setAuxItems] = useState([]);
+  const [auxNext, setAuxNext] = useState(null);
+  const [auxLoad, setAuxLoad] = useState(false);
+  const [showAux, setShowAux] = useState(false);
+  const listRef = useRef(null);
 
-  /* fetch once only when needed */
-  const fetchAuxiliaries = async () => {
-    setLoading(true);
+  /* snackbar */
+  const [snkOpen, setSnkOpen] = useState(false);
+  const [snkMsg, setSnkMsg] = useState("");
+
+  /* fetch page */
+  const fetchAux = async (url) => {
+    if (auxLoad || !url) return;
+    setAuxLoad(true);
     try {
-      const { data } = await axios.get(
-        "https://www.boqmasteradmin.com/auxiliaries/"
-      );
-      const list = Array.isArray(data)
-        ? data
-        : Array.isArray(data.results)
-        ? data.results
-        : [];
-      setAuxiliaries(list);
+      const { data } = await axios.get(url);
+      const results = Array.isArray(data) ? data : data.results || [];
+      setAuxItems((p) => [...p, ...results]);
+      setAuxNext(Array.isArray(data) ? null : data.next);
     } catch (err) {
-      console.error("[ProductCard] fetchAuxiliaries error:", err);
-      setAuxiliaries([]);
+      console.error("[ProductCard] aux fetch error:", err);
     } finally {
-      setLoading(false);
+      setAuxLoad(false);
     }
   };
 
-  /* filter whenever list OR Prod changes */
+  /* toggle panel */
+  const toggleAuxPanel = async () => {
+    if (!showAux && auxItems.length === 0) {
+      await fetchAux(
+        `https://www.boqmasteradmin.com/product/${Prod.id}/auxiliaries/`
+      );
+    }
+    setShowAux((v) => !v);
+  };
+
+  /* infinite-scroll listener */
   useEffect(() => {
-    if (!Prod) return; // Prod may be undefined on very first render
-    const prodCat9 = (Prod.SubCategory9 || "").trim().toLowerCase();
-    const prodCat4 = (Prod.SubCategory4 || "").trim().toLowerCase();
+    if (!showAux) return;
+    const el = listRef.current;
+    if (!el) return;
 
-    const matches = auxiliaries.filter((aux) => {
-      const auxCat4Arr = (aux.SubCategory4 || "")
-        .split(",")
-        .map((s) => s.trim().toLowerCase())
-        .filter(Boolean);
-      const auxCat3Arr = (aux.SubCategory3 || "")
-        .split(",")
-        .map((s) => s.trim().toLowerCase())
-        .filter(Boolean);
-
-      if (prodCat9 && prodCat4)
-        return auxCat4Arr.includes(prodCat9) && auxCat3Arr.includes(prodCat4);
-      if (prodCat9) return auxCat4Arr.includes(prodCat9);
-      if (prodCat4) return auxCat3Arr.includes(prodCat4);
-      return false;
-    });
-
-    setFilteredAuxiliaries(matches);
-  }, [auxiliaries, Prod]);
+    const onScroll = () => {
+      if (el.scrollTop + el.clientHeight >= el.scrollHeight - 40) {
+        fetchAux(auxNext);
+      }
+    };
+    el.addEventListener("scroll", onScroll);
+    return () => el.removeEventListener("scroll", onScroll);
+  }, [showAux, auxNext, auxLoad]);
 
   /* add to cart */
   const addToBoq = (item) => {
     dispatch(ADD(item));
-    setSnackbarMessage(`${item.ProductName} has been added to your BOQ Table`);
-    setSnackbarOpen(true);
+    setSnkMsg(`${item.ProductName} added to BOQ`);
+    setSnkOpen(true);
   };
 
-  /* handlers */
-  const prodWithKey = Prod ? { ...Prod, Heading: HeadName, quantity: 1 } : null;
-
-  const handleAddClick = async () => {
-    if (!Prod) return;
-    addToBoq(prodWithKey);
-    if (!auxiliaries.length) await fetchAuxiliaries();
-    setShowAuxiliaries(true);
-  };
-
-  const handleToggleAuxClick = async () => {
-    if (!showAuxiliaries && !auxiliaries.length) await fetchAuxiliaries();
-    setShowAuxiliaries((prev) => !prev);
-  };
-
-  /* early bail AFTER hooks to satisfy ESLint */
   if (!Prod) return null;
+  const prodForCart = { ...Prod, Heading: HeadName, quantity: 1 };
 
-  /* ───────────── render ───────────── */
+  /* ─────────────────────── render ─────────────────────── */
   return (
-    <div>
+    <>
       {/* main product row */}
       <Container>
-        <Box onClick={handleAddClick}>
-          <Add />
+        <Box onClick={() => addToBoq(prodForCart)}>
+          <Add fontSize="small" />
         </Box>
 
-        <Title>{Prod.ProductName}</Title>
-        <Price>{displayPrice(Prod.Price)}</Price>
+        <div
+          style={{ flex: 1, display: "flex", flexDirection: "column", gap: 2 }}
+        >
+          <Title>{Prod.ProductName}</Title>
+          <Price>{displayPrice(Prod.Price)}</Price>
+        </div>
 
-        <ToggleAuxButton onClick={handleToggleAuxClick}>
-          {showAuxiliaries ? "Hide Auxiliaries" : "Show Auxiliaries"}
-        </ToggleAuxButton>
+        <ToggleAuxBtn onClick={toggleAuxPanel}>
+          {showAux ? "Hide Aux" : "Show Aux"}
+        </ToggleAuxBtn>
       </Container>
 
-      {/* auxiliaries list */}
-      {showAuxiliaries && (
-        <div>
-          {loading && <LoadingMessage>Loading auxiliaries…</LoadingMessage>}
+      {/* aux panel */}
+      {showAux && (
+        <AuxContainer ref={listRef}>
+          <AuxHeader>Auxiliaries for {Prod.ProductName}</AuxHeader>
 
-          {!loading && filteredAuxiliaries.length > 0 && (
-            <AuxiliariesContainer>
-              <AuxiliaryTitle>
-                Auxiliaries for {Prod.ProductName}:
-              </AuxiliaryTitle>
-
-              <AuxiliaryList>
-                {filteredAuxiliaries.map((aux) => (
-                  <AuxBox key={aux.id}>
-                    <Box onClick={() => addToBoq(aux)}>
-                      <Add />
-                    </Box>
-                    <Title>{aux.ProductName}</Title>
-                    <Price>{displayPrice(aux.Price)}</Price>
-                  </AuxBox>
-                ))}
-              </AuxiliaryList>
-
-              <ShowLessButton onClick={() => setShowAuxiliaries(false)}>
-                Hide Auxiliaries
-              </ShowLessButton>
-            </AuxiliariesContainer>
+          {auxItems.length === 0 && auxLoad && (
+            <>
+              {[...Array(3)].map((_, i) => (
+                <Skeleton key={i} />
+              ))}
+            </>
           )}
 
-          {!loading && filteredAuxiliaries.length === 0 && (
-            <LoadingMessage>No matching auxiliaries found.</LoadingMessage>
+          <AuxList>
+            {auxItems.map((aux) => (
+              <AuxBox key={aux.id}>
+                <Box onClick={() => addToBoq(aux)}>
+                  <Add fontSize="small" />
+                </Box>
+                <div style={{ flex: 1 }}>
+                  <Title>{aux.ProductName}</Title>
+                  <Price>{displayPrice(aux.Price)}</Price>
+                </div>
+              </AuxBox>
+            ))}
+          </AuxList>
+
+          {auxLoad && auxItems.length > 0 && (
+            <LoadingMsg>Loading more…</LoadingMsg>
           )}
-        </div>
+          {!auxLoad && !auxNext && auxItems.length === 0 && (
+            <LoadingMsg>No matching auxiliaries.</LoadingMsg>
+          )}
+          {!auxLoad && !auxNext && auxItems.length > 0 && (
+            <LoadingMsg>All auxiliaries loaded.</LoadingMsg>
+          )}
+        </AuxContainer>
       )}
 
       {/* snackbar */}
       <Snackbar
-        open={snackbarOpen}
-        autoHideDuration={3000}
-        onClose={() => setSnackbarOpen(false)}
+        open={snkOpen}
+        autoHideDuration={2500}
+        onClose={() => setSnkOpen(false)}
         anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
       >
         <Alert
           variant="filled"
           severity="success"
-          sx={{
-            maxWidth: "45vw",
-            background: "rgba(240, 240, 0, 0.421)",
-            color: "black",
-          }}
-          onClose={() => setSnackbarOpen(false)}
+          sx={{ background: "rgba(255, 241, 118, 0.9)", color: "#000" }}
+          onClose={() => setSnkOpen(false)}
         >
-          {snackbarMessage}
+          {snkMsg}
         </Alert>
       </Snackbar>
-    </div>
+    </>
   );
-};
-
-export default ProductCard;
+}
