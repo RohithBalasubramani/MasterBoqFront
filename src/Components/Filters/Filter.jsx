@@ -208,7 +208,18 @@ const Filter = ({
                   <FilterHead>Sub Cat 2</FilterHead>
                   <TwoColGrid>
                     {Array.from(subCat2Options)
-                      .sort()
+                      .sort((a, b) => {
+                        const regex = /^([\d.]+)([a-zA-Z]*)$/;
+
+                        const [, aNum, aUnit] = a.match(regex) || [];
+                        const [, bNum, bUnit] = b.match(regex) || [];
+
+                        if (aUnit !== bUnit) {
+                          return aUnit.localeCompare(bUnit);
+                        } else {
+                          return parseFloat(aNum) - parseFloat(bNum);
+                        }
+                      })
                       .map((sc2) => (
                         <FilterCheckBox
                           key={sc2}
@@ -240,7 +251,18 @@ const Filter = ({
                   <FilterHead>Sub Cat 3</FilterHead>
                   <TwoColGrid>
                     {Array.from(subCat3Options)
-                      .sort()
+                      .sort((a, b) => {
+                        const regex = /^([\d.]+)([a-zA-Z]*)$/;
+
+                        const [, aNum, aUnit] = a.match(regex) || [];
+                        const [, bNum, bUnit] = b.match(regex) || [];
+
+                        if (aUnit !== bUnit) {
+                          return aUnit.localeCompare(bUnit);
+                        } else {
+                          return parseFloat(aNum) - parseFloat(bNum);
+                        }
+                      })
                       .map((sc3) => (
                         <FilterCheckBox
                           key={sc3}
