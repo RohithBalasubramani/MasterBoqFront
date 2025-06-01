@@ -40,7 +40,13 @@ const HeadCon = styled.div`
 
 const SearchCon = styled.div`
   margin-left: 5%;
-  width: 70%;
+  width: 60%;
+  display: flex;
+  height: 7vh;
+  background: ${(p) => p.bg};
+  border: 2px solid ${(p) => p.bor};
+  border-radius: 8px;
+  color: ${(p) => p.col};
 `;
 
 const CartCont = styled.div`
@@ -399,7 +405,7 @@ const AuxiliaryListing = () => {
     setAuxiliaries([]);
     //setServerCount(0);
     setNextUrl(AUX_LIST_URL);
-    //setNextFilterUrl(AUX_LIST_URL);
+    setNextFilterUrl(AUX_FILTER_URL);
   };
 
   const doServerFilter = () => {
@@ -415,6 +421,19 @@ const AuxiliaryListing = () => {
       fetchAuxiliariesWithFilter(buildPayload(), AUX_FILTER_URL);
     }
   };
+
+  const handleSearch = () => {
+    setSelectedBrand(null);
+    setSelectedCategory(null);
+    setSelectedSubCategory1([]);
+    setSelectedSubCategory2([]);
+    setSelectedSubCategory3([]);
+    const url = `${AUX_LIST_URL}?search=${encodeURIComponent(
+      searchTerm.trim()
+    )}`;
+    resetPagination();
+    fetchAuxiliaries(url);
+  }
 
   return (
     <Container>
@@ -456,8 +475,11 @@ const AuxiliaryListing = () => {
           />
         </BottomNavigation>
 
-        <SearchCon>
+        <SearchCon bg="#f2f2f2" bor="#e0e0e0" col="#4f4f4f">
           <SearchAppBar search={searchTerm} onchange={handleSearchChange} />
+          <OutlineBtn onClick={handleSearch} style={{ marginLeft: 8 }}>
+            Search
+          </OutlineBtn>
         </SearchCon>
 
         <CartCont>
