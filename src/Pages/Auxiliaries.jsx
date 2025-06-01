@@ -30,12 +30,13 @@ const Container = styled.div`
 `;
 
 const HeadCon = styled.div`
-  background-color: #15375a;
+  background: #15375a;
   position: sticky;
-  padding: 1vh;
+  top: 0;
+  width: 100%;
   z-index: 100;
+  padding: 1vh;
   display: flex;
-  align-items: center;
 `;
 
 const SearchCon = styled.div`
@@ -443,12 +444,9 @@ const AuxiliaryListing = () => {
           showLabels
           value={value}
           sx={{
-            background: "#09193D",
-            borderRadius: "20px",
-            color: "#b2b2b2",
-            "& .Mui-selected, .Mui-selected > svg": {
-              color: "#fff700",
-            },
+            background: "#09193d",
+            borderRadius: 20,
+            "& .Mui-selected , & .Mui-selected > svg": { color: "#fff700" },
           }}
           onChange={(event, newValue) => {
             setValue(newValue);
