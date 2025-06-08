@@ -376,6 +376,7 @@ export default function ProductListing() {
         {/* filter column */}
         <FilterWrap>
           <Filter
+            url={"https://www.boqmasteradmin.com/product/meta_tree/"}
             selectedBrand={selectedBrand}
             selectedCategory={selectedCategory}
             selectedSubCategory1={selectedSubCategory1}

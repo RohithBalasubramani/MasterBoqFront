@@ -36,7 +36,7 @@ const RightColumn = styled.div`
 
 const TwoColGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(104px, 1fr));
   gap: 0.1rem;
 `;
 
@@ -59,6 +59,7 @@ const PriceWrap = styled.div`
 /* ───────────────────────── component ──────────────────────────── */
 
 const Filter = ({
+  url,
   selectedBrand,
   selectedCategory,
   selectedSubCategory1,
@@ -75,7 +76,7 @@ const Filter = ({
   // fetch hierarchy
   useEffect(() => {
     axios
-      .get("https://www.boqmasteradmin.com/product/meta_tree/")
+      .get(url)
       .then(({ data }) => setMetaTree(data))
       .catch(console.error);
   }, []);
