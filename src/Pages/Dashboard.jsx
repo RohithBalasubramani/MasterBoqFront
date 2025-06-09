@@ -8,6 +8,8 @@ import {
   TableCell,
   LinearProgress,
 } from "@mui/material";
+import PageHeader from "../Components/PageHeader";
+import SummaryCard from "../Components/SummaryCard";
 
 const projects = [
   {
@@ -46,36 +48,12 @@ const Container = styled.div`
   font-family: Lexend, sans-serif;
 `;
 
-const Title = styled.h2`
-  font-size: 2rem;
-  font-weight: 500;
-  margin-bottom: 1.5rem;
-`;
-
 const SummaryGrid = styled.div`
   display: flex;
   gap: 2rem;
   margin-bottom: 2rem;
 `;
 
-const InfoCard = styled.div`
-  background: #ffffff;
-  flex: 1;
-  padding: 1.5rem;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-`;
-
-const CardLabel = styled.div`
-  font-size: 1rem;
-  font-weight: 500;
-  margin-bottom: 0.5rem;
-`;
-
-const CardNumber = styled.div`
-  font-size: 2rem;
-  font-weight: 500;
-`;
 
 const ProgressWrap = styled.div`
   display: flex;
@@ -100,17 +78,11 @@ const Dashboard = () => {
   return (
 
     <Container>
-      <Title>Master BOQ Dashboard</Title>
+      <PageHeader title="Master BOQ Dashboard" />
 
       <SummaryGrid>
-        <InfoCard>
-          <CardLabel>Projects</CardLabel>
-          <CardNumber>{projects.length}</CardNumber>
-        </InfoCard>
-        <InfoCard>
-          <CardLabel>Total Panels</CardLabel>
-          <CardNumber>{totalPanels}</CardNumber>
-        </InfoCard>
+        <SummaryCard label="Projects" number={projects.length} />
+        <SummaryCard label="Total Panels" number={totalPanels} />
       </SummaryGrid>
 
       <StyledTable size="small">
