@@ -5,6 +5,7 @@ import ProductListing from "./Pages/ProductListing.jsx";
 import Cart from "./Components/Table";
 import Groups2 from "./Pages/Groups2";
 import AuxiliaryListing from "./Pages/Auxiliaries";
+import Dashboard from "./Pages/Dashboard";
 
 const App = () => {
   // const fetchProducts = useCallback(async () => {
@@ -87,6 +88,7 @@ const App = () => {
         <Route path="/table" element={<Cart />} />
         <Route path="/Groups" element={<Groups2 />} />
         <Route path="/auxiliaries" element={<AuxiliaryListing />} />
+        <Route path="/dashboard" element={<Dashboard />} />
       </Routes>
     </HashRouter>
   );
