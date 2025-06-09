@@ -1,4 +1,5 @@
 import React from "react";
+
 import styled from "styled-components";
 import {
   Table,
@@ -8,6 +9,7 @@ import {
   TableCell,
   LinearProgress,
 } from "@mui/material";
+
 
 const projects = [
   {
@@ -98,6 +100,7 @@ const Dashboard = () => {
   const totalPanels = projects.reduce((sum, p) => sum + p.panels, 0);
 
   return (
+
     <Container>
       <Title>Master BOQ Dashboard</Title>
 
@@ -113,6 +116,7 @@ const Dashboard = () => {
       </SummaryGrid>
 
       <StyledTable size="small">
+
         <TableHead>
           <TableRow>
             <TableCell>Project Name</TableCell>
@@ -132,16 +136,20 @@ const Dashboard = () => {
               <TableCell>{p.quotation}</TableCell>
               <TableCell align="right">{p.panels}</TableCell>
               <TableCell sx={{ width: 200 }}>
+
                 <ProgressWrap>
                   <LinearProgress variant="determinate" value={p.progress} sx={{ flex: 1 }} />
                   <Percent>{p.progress}%</Percent>
                 </ProgressWrap>
+
               </TableCell>
             </TableRow>
           ))}
         </TableBody>
+
       </StyledTable>
     </Container>
+
   );
 };
 
