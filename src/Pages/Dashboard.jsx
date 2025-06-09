@@ -1,5 +1,15 @@
 import React from "react";
-import { Box, Card, CardContent, Typography, Table, TableHead, TableBody, TableRow, TableCell, LinearProgress } from "@mui/material";
+
+import styled from "styled-components";
+import {
+  Table,
+  TableHead,
+  TableBody,
+  TableRow,
+  TableCell,
+  LinearProgress,
+} from "@mui/material";
+
 
 const projects = [
   {
@@ -31,31 +41,82 @@ const projects = [
   },
 ];
 
+const Container = styled.div`
+  background: #ffffff;
+  padding: 3vh;
+  color: #333333;
+  font-family: Lexend, sans-serif;
+`;
+
+const Title = styled.h2`
+  font-size: 2rem;
+  font-weight: 500;
+  margin-bottom: 1.5rem;
+`;
+
+const SummaryGrid = styled.div`
+  display: flex;
+  gap: 2rem;
+  margin-bottom: 2rem;
+`;
+
+const InfoCard = styled.div`
+  background: #ffffff;
+  flex: 1;
+  padding: 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+`;
+
+const CardLabel = styled.div`
+  font-size: 1rem;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+`;
+
+const CardNumber = styled.div`
+  font-size: 2rem;
+  font-weight: 500;
+`;
+
+const ProgressWrap = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 200px;
+`;
+
+const Percent = styled.span`
+  font-size: 0.85rem;
+`;
+
+const StyledTable = styled(Table)`
+  background: #ffffff;
+  border-radius: 8px;
+  overflow: hidden;
+`;
+
 const Dashboard = () => {
   const totalPanels = projects.reduce((sum, p) => sum + p.panels, 0);
 
   return (
-    <Box p={3}>
-      <Typography variant="h4" gutterBottom>
-        Master BOQ Dashboard
-      </Typography>
 
-      <Box display="flex" gap={2} mb={4}>
-        <Card sx={{ flex: 1 }}>
-          <CardContent>
-            <Typography variant="h6">Projects</Typography>
-            <Typography variant="h4">{projects.length}</Typography>
-          </CardContent>
-        </Card>
-        <Card sx={{ flex: 1 }}>
-          <CardContent>
-            <Typography variant="h6">Total Panels</Typography>
-            <Typography variant="h4">{totalPanels}</Typography>
-          </CardContent>
-        </Card>
-      </Box>
+    <Container>
+      <Title>Master BOQ Dashboard</Title>
 
-      <Table size="small">
+      <SummaryGrid>
+        <InfoCard>
+          <CardLabel>Projects</CardLabel>
+          <CardNumber>{projects.length}</CardNumber>
+        </InfoCard>
+        <InfoCard>
+          <CardLabel>Total Panels</CardLabel>
+          <CardNumber>{totalPanels}</CardNumber>
+        </InfoCard>
+      </SummaryGrid>
+
+      <StyledTable size="small">
+
         <TableHead>
           <TableRow>
             <TableCell>Project Name</TableCell>
@@ -75,16 +136,20 @@ const Dashboard = () => {
               <TableCell>{p.quotation}</TableCell>
               <TableCell align="right">{p.panels}</TableCell>
               <TableCell sx={{ width: 200 }}>
-                <Box display="flex" alignItems="center" gap={1}>
+
+                <ProgressWrap>
                   <LinearProgress variant="determinate" value={p.progress} sx={{ flex: 1 }} />
-                  <Typography variant="body2">{p.progress}%</Typography>
-                </Box>
+                  <Percent>{p.progress}%</Percent>
+                </ProgressWrap>
+
               </TableCell>
             </TableRow>
           ))}
         </TableBody>
-      </Table>
-    </Box>
+
+      </StyledTable>
+    </Container>
+
   );
 };
 
