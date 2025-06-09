@@ -11,9 +11,8 @@ import store from "./store";
 import UserService from "./Services/UserService";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { ThemeProvider } from "styled-components";
+import { ThemeModeProvider } from "./theme/ThemeContext";
 import CssBaseline from "@mui/material/CssBaseline";
-import theme from "./theme/theme";
 import ErrorBoundary from "./Components/ErrorBoundary";
 
 //Initialize Keycloak before anything else
@@ -31,11 +30,11 @@ root.render(
     <React.StrictMode>
       <ErrorBoundary>
         <QueryClientProvider client={queryClient}>
-          <ThemeProvider theme={theme}>
+          <ThemeModeProvider>
             {/* Normalize & reset MUI styles */}
             <CssBaseline />
             <App />
-          </ThemeProvider>
+          </ThemeModeProvider>
         </QueryClientProvider>
       </ErrorBoundary>
     </React.StrictMode>
