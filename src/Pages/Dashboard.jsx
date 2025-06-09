@@ -1,5 +1,4 @@
 import React from "react";
-
 import styled from "styled-components";
 import {
   Table,
@@ -9,7 +8,6 @@ import {
   TableCell,
   LinearProgress,
 } from "@mui/material";
-
 
 const projects = [
   {
