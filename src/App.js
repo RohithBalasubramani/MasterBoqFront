@@ -7,7 +7,6 @@ import Groups2 from "./Pages/Groups2";
 import AuxiliaryListing from "./Pages/Auxiliaries";
 import DashboardPage from "./Pages/DashboardPage";
 
-
 const App = () => {
   // const fetchProducts = useCallback(async () => {
   //   if (!nextUrl || loading) return;
@@ -70,7 +69,7 @@ const App = () => {
     <HashRouter>
       <Routes>
         <Route
-          path="/"
+          path="/listing"
           element={
             <ProductListing
             // products={data}
@@ -89,7 +88,7 @@ const App = () => {
         <Route path="/table" element={<Cart />} />
         <Route path="/Groups" element={<Groups2 />} />
         <Route path="/auxiliaries" element={<AuxiliaryListing />} />
-        <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="/" element={<DashboardPage />} />
       </Routes>
     </HashRouter>
   );

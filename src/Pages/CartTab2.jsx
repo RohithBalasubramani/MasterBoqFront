@@ -1,8 +1,24 @@
+/*  ──────────────────────────────────────────────────────────────
+    CartTab2  –  now with “Save as Panel” popup
+   ────────────────────────────────────────────────────────────── */
+
 import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import styled from "styled-components";
 import { Link } from "react-router-dom";
-import { Backdrop, Paper, Snackbar, Alert, IconButton } from "@mui/material";
+import {
+  Backdrop,
+  Paper,
+  Snackbar,
+  Alert,
+  IconButton,
+  Button,
+  FormControl,
+  InputLabel,
+  MenuItem,
+  Select,
+  Typography,
+} from "@mui/material";
 import { Close } from "@mui/icons-material";
 import { RESET } from "../Redux/actions/action";
 import { exportDataToExcel } from "../Components/Cart/exportdataToExcel";
@@ -65,7 +81,7 @@ const Row = styled.div`
   color: ${({ total }) => (total ? primary : "#4f4f4f")};
 `;
 
-/* ───────── popup ───────── */
+/* ───────── popup sX ───────── */
 const popSX = {
   width: "min(90vw,460px)",
   maxHeight: "80vh",
@@ -77,6 +93,22 @@ const CloseBtn = styled(IconButton)`
   top: 8px;
   right: 8px;
 `;
+
+/* dummy customer → project mapping */
+const customers = [
+  {
+    name: "ACME Industries",
+    projects: ["Factory Alpha", "Warehouse B"],
+  },
+  {
+    name: "Beta LLC",
+    projects: ["Office Complex"],
+  },
+  {
+    name: "Gamma Group",
+    projects: ["Plant X", "Plant Y"],
+  },
+];
 
 /* ───────── helpers ───────── */
 const isNum = (x) => !isNaN(parseFloat(x));
@@ -95,9 +127,24 @@ const CartTab2 = () => {
   /* #products (not qty) that need a quote */
   const quotesNeeded = items.filter((i) => !isNum(i.Price)).length;
 
-  /* popup & snackbar */
-  const [openPopup, setPopup] = useState(false);
+  /* pop-ups & snackbar */
+  const [openAddGrp, setOpenAddGrp] = useState(false);
+  const [openSavePnl, setOpenSavePnl] = useState(false);
   const [openSnack, setSnack] = useState(false);
+  const [selectedCust, setCust] = useState("");
+  const [selectedProj, setProj] = useState("");
+
+  /* reset project dropdown when customer changes */
+  const handleCustChange = (e) => {
+    setCust(e.target.value);
+    setProj("");
+  };
+
+  const handleSave = () => {
+    // -> here you would dispatch / API call
+    setOpenSavePnl(false);
+    setSnack(true);
+  };
 
   return (
     <Wrap>
@@ -110,7 +157,7 @@ const CartTab2 = () => {
             <OutlineButton>Add More</OutlineButton>
           </Link>
 
-          <PrimaryButton onClick={() => setPopup(true)}>
+          <PrimaryButton onClick={() => setOpenAddGrp(true)}>
             Add to Group
           </PrimaryButton>
 
@@ -135,7 +182,7 @@ const CartTab2 = () => {
           </Row>
 
           <Row>
-            <span>Quotes Required</span>
+            <span>Quotes&nbsp;Required</span>
             <span>{quotesNeeded}</span>
           </Row>
 
@@ -164,20 +211,80 @@ const CartTab2 = () => {
           >
             Download Quotations
           </OutlineButton>
+
+          <OutlineButton
+            style={{ width: "100%", marginTop: "1vh" }}
+            onClick={() => setOpenSavePnl(true)}
+          >
+            Save&nbsp;as&nbsp;panel
+          </OutlineButton>
         </Summary>
       </Body>
 
-      {/* ─── popup (add‑to‑group) ─── */}
-      <Backdrop open={openPopup} sx={{ zIndex: (t) => t.zIndex.drawer + 1 }}>
+      {/* ─── popup #1 – add-to-group (unchanged) ─── */}
+      <Backdrop open={openAddGrp} sx={{ zIndex: (t) => t.zIndex.drawer + 2 }}>
         <Paper sx={popSX}>
-          <CloseBtn onClick={() => setPopup(false)}>
+          <CloseBtn onClick={() => setOpenAddGrp(false)}>
             <Close />
           </CloseBtn>
 
           <Send
-            handleClose={() => setPopup(false)}
+            handleClose={() => setOpenAddGrp(false)}
             handleToggleSB={() => setSnack(true)}
           />
+        </Paper>
+      </Backdrop>
+
+      {/* ─── popup #2 – save-as-panel (NEW) ─── */}
+      <Backdrop open={openSavePnl} sx={{ zIndex: (t) => t.zIndex.drawer + 3 }}>
+        <Paper sx={popSX}>
+          <CloseBtn onClick={() => setOpenSavePnl(false)}>
+            <Close />
+          </CloseBtn>
+
+          <Typography variant="h6" sx={{ mb: 3, fontWeight: 600 }}>
+            Save to Panel
+          </Typography>
+
+          <FormControl fullWidth sx={{ mb: 3 }}>
+            <InputLabel>Company</InputLabel>
+            <Select
+              value={selectedCust}
+              label="Company"
+              onChange={handleCustChange}
+            >
+              {customers.map((c) => (
+                <MenuItem key={c.name} value={c.name}>
+                  {c.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
+          <FormControl fullWidth disabled={!selectedCust} sx={{ mb: 3 }}>
+            <InputLabel>Project</InputLabel>
+            <Select
+              value={selectedProj}
+              label="Project"
+              onChange={(e) => setProj(e.target.value)}
+            >
+              {customers
+                .find((c) => c.name === selectedCust)
+                ?.projects.map((p) => (
+                  <MenuItem key={p} value={p}>
+                    {p}
+                  </MenuItem>
+                ))}
+            </Select>
+          </FormControl>
+
+          <PrimaryButton
+            disabled={!selectedCust || !selectedProj}
+            onClick={handleSave}
+            style={{ width: "100%" }}
+          >
+            Save
+          </PrimaryButton>
         </Paper>
       </Backdrop>
 
@@ -193,7 +300,7 @@ const CartTab2 = () => {
           variant="filled"
           sx={{ background: primary, color: accent }}
         >
-          Products added to the group
+          Panel saved successfully
         </Alert>
       </Snackbar>
     </Wrap>
