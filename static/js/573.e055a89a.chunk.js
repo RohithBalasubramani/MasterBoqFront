@@ -1,0 +1,2 @@
+"use strict";(self.webpackChunkfilterfront=self.webpackChunkfilterfront||[]).push([[573],{6573:function(e,t,r){r.r(t);t.default=[{id:1,customer:"ACME Corp",projectName:"Factory A",tender:"T001",quotation:"Q1001",panels:5,progress:60},{id:2,customer:"Beta LLC",projectName:"Warehouse B",tender:"T002",quotation:"Q1002",panels:3,progress:35},{id:3,customer:"Gamma Industries",projectName:"Office Complex",tender:"T003",quotation:"Q1003",panels:8,progress:80}]}}]);
+//# sourceMappingURL=573.e055a89a.chunk.js.map
