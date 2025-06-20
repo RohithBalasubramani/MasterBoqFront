@@ -168,7 +168,7 @@ export default function ProjectBrowserSection({ customers = [] }) {
                         i % 2 ? theme.palette.action.selected : "inherit",
                     }}
                   >
-                    <TableCell>{p.projectName}</TableCell>
+                    <TableCell>{p.project_name}</TableCell>
                     <TableCell>{p.tender}</TableCell>
                     <TableCell>{p.quotation}</TableCell>
                     <TableCell>

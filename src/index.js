@@ -16,16 +16,13 @@ import CssBaseline from "@mui/material/CssBaseline";
 import ErrorBoundary from "./Components/ErrorBoundary";
 
 //Initialize Keycloak before anything else
-UserService.initKeycloak();
 
 // 2) Create your React-Query client
 const queryClient = new QueryClient();
 
 // 3) Grab the root DOM node
 const container = document.getElementById("root");
-const root = createRoot(container);
-
-root.render(
+const root = () => createRoot(container).render(
   <Provider store={store}>
     <React.StrictMode>
       <ErrorBoundary>
@@ -40,6 +37,8 @@ root.render(
     </React.StrictMode>
   </Provider>
 );
+
+UserService.initKeycloak(root)
 
 // 4) Web vitals (optional)
 reportWebVitals();
