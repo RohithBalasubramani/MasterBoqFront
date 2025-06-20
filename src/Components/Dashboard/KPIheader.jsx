@@ -166,7 +166,7 @@ export default function KpiHeader({ customers }) {
           Recent Project
         </Typography>
         <Typography variant="h6" sx={{ mt: 0.5, mb: 1 }}>
-          {recent.projectName || "—"}
+          {recent.project_name || "—"}
         </Typography>
         {recent.id && (
           <RouterLink

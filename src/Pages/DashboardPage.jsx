@@ -8,9 +8,10 @@ import UserService from "../Services/UserService";
 // import KpiHeader from "../Components/Dashboard/KpiHeader";
 
 import ProjectBrowserSection from "../Components/Dashboard/ProjectBrowser";
-import customers from "../mocks/customers"; // mock data for customers
+//import customers from "../mocks/customers"; // mock data for customers
 import TopBar from "../Components/Dashboard/Topbar";
 import KpiHeader from "../Components/Dashboard/KPIheader";
+import { httpClient } from "../Services/HttpClient";
 
 /* ═══════════ styled shells ═══════════ */
 const Screen = styled.div`
@@ -41,6 +42,8 @@ export default function DashboardPage() {
   /* demo: load “flat” projects for search/filter later (optional) */
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null)
+  const [customers, setCustomers] = useState([])
 
   /* search is no longer used in TopBar; kept here if you re-add */
   const [search] = useState("");
@@ -51,12 +54,18 @@ export default function DashboardPage() {
 
   /* mock fetch of flat projects (can delete if unused) */
   useEffect(() => {
-    const t = setTimeout(async () => {
-      const mod = await import("../mocks/projects");
-      setProjects(mod.default);
-      setLoading(false);
-    }, 400);
-    return () => clearTimeout(t);
+    const fetchCustomers = async () => {
+      setLoading(true)
+      try {
+        let { data } = await httpClient.get("https://boqmasteradmin.com/main/api/customers/")
+        setCustomers(data.results)
+      } catch(e) {
+        console.error(e)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchCustomers()
   }, []);
 
   return (
